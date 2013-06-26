@@ -1,0 +1,2 @@
+#!/bin/sh
+sqlite3 ~/Documents/xlibris/db/xlibris.sql3

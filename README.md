@@ -1,4 +1,4 @@
 xlibris
-=======
+=====
 
-A PDF Organization System
+A DOI based PDF management system.

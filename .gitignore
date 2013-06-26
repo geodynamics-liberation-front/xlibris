@@ -33,3 +33,8 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Sample PDF
+*.pdf
+# XML sample directory
+crossref
