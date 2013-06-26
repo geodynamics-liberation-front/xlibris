@@ -1,0 +1,300 @@
+#!/usr/bin/env python
+import argparse
+import logging
+import operator
+import os
+import shutil
+import subprocess
+import sys
+import traceback
+import xlibris
+import xlibris.xlibris_fs as xlfs
+import xlibris.settings as xlsettings
+import xlibris.xlibris_store as xlstore
+import xlibris.xlibris_db as xldb
+import xlibris.doi as doi
+
+
+# Setup a logger and formatter
+name=os.path.basename(sys.argv[0])
+LOG=logging.getLogger(name)
+LOG.setLevel(logging.INFO)
+formatter = logging.Formatter("%(asctime)s - %(name)s (%(process)d) - %(levelname)s - %(message)s")
+
+def get_article(pdf,doi_number=None):
+	if not doi_number:
+		LOG.debug("Extracting DOI from %s",pdf)
+		dois=doi.get_doi_from_pdf(pdf)
+		if len(dois)==0:
+			sys.stderr.write("Could not find DOI in PDF, manually enter DOI.\n")
+			sys.stderr.write("DOI: ")
+			doi_number=sys.stdin.readline().strip()
+		elif len(dois)==1:
+			LOG.debug("Found 1 DOI: %s"%dois[0])
+			doi_number=dois[0]
+		else:	
+			LOG.debug("Got DOIs: %s"%dois)
+			doi_number=dois[0]
+			if settings.prompt_doi:
+				sys.stderr.write("Multiple DOI found, select the correct DOI for this document.\n")
+				for n,doi_candidate in enumerate(dois):
+					sys.stderr.write("[%3d] %s\n"%(n,doi_candidate))
+				doi_ndx=-1
+				while doi_ndx<0 or doi_ndx>=len(dois):
+					sys.stderr.write("Select DOI 0 to %d [0]: "%(len(doi)-1))
+					ndx_str=sys.stdin.readline().strip()
+					if ndx_str=='':
+						doi_ndx=0
+					else:
+						try:
+							doi_ndx=int(ndx_str)
+						except:
+							pass
+				doi_number=dois[doi_ndx]
+	LOG.debug("Using DOI: %s"%doi_number)
+
+	LOG.debug("Getting CrossREF information")
+	doi_xml=doi.get_doi_xml(doi_number)
+	article=None
+	try:
+		article=doi.parse_doi_xml(doi_xml)
+	except:
+		t,v,tb=sys.exc_info()
+		sys.stderr.write("Exception processing %s\n"%doi_number)
+		sys.stderr.write("%s: %s\n"%(t.__name__,v))
+		escaped_doi=doi_number.replace("/","\\\\")
+		log_file=os.path.join(settings.log_dir,escaped_doi+'.log')
+		xml_file=os.path.join(settings.log_dir,escaped_doi+'.xml')
+		sys.stderr.write("Check in %s for details\n"%settings.log_dir)
+		f=open(xml_file,'w')
+		f.write(doi_xml.prettify())
+		f.flush()
+		f.close()
+		f=open(log_file,'w')
+		traceback.print_exception(t,v,tb,None,f)
+		f.flush()
+		f.close()
+	return article
+
+def info_pdf(args,settings):
+	LOG.debug("Getting PDFs info")
+	pdfs=args.pdf
+	LOG.debug(": %s",pdfs)
+	out=sys.stdout
+	for pdf in pdfs:
+		article=get_article(pdf)
+		if article!=None:
+			out.write("%s metadata:\n"%pdf)
+			out.write("Article Title: %s\n"%article.title)
+			out.write("Article DOI:   %s\n"%article.doi)
+			for author in article.authors:
+				out.write("Author:        %s, %s\n"%(author.surname,author.given_name))
+			issue=article.issue
+			journal=issue.journal
+			out.write("Journal:       %s (%s)\n"%(journal.title,journal.abbreviation))	
+			for media_type,issn in journal.issn.items():
+				out.write("ISSN:          %s (%s)\n"%(issn,media_type))
+			out.write("Volume:        %s\n"%issue.volume)
+			out.write("Issue:         %s\n"%issue.issue)
+			for  media_type,publication in issue.publications.items():
+				out.write("Issue Pub:     %s - %s/%s/%s\n"%(media_type,publication.year,publication.month,publication.day))
+			for  media_type,publication in article.publications.items():
+				out.write("Article Pub:   %s - %s/%s/%s\n"%(media_type,publication.year,publication.month,publication.day))
+
+URL_SCHEMAS=["http:","https:","ftp:"]
+DOI_SCHEMAS=["doi:","dx.doi.org","10."]
+def import_document(args,settings):
+	LOG.debug("Import document")
+	LOG.debug("Method: %s"%args.method)
+	LOG.debug("Source(s): %s"%args.source)
+	for s in args.source:
+		LOG.debug("Source: %s"%s)
+		if args.method=="file":
+			import_file(s)
+		elif args.method=="doi":
+			import_doi(s)
+		elif args.method=="url":
+			import_url(s)
+		else: # try to guess
+			if os.path.exists(s) and os.path.isfile(s):
+				LOG.debug("Trying %s as a file"%s)
+				import_file(s,settings)
+			elif reduce(operator.or_,[s.startswith(schema) for schema in URL_SCHEMAS],0):
+				LOG.debug("Trying %s as a URL"%s)
+				import_file(s,settings)
+			elif reduce(operator.or_,[s.startswith(schema) for schema in DOI_SCHEMAS],0):
+				LOG.debug("Trying %s as a DOI"%s)
+				import_doi(s,settings)
+			else:
+				sys.stderr.write("Unable to figure out what '%s' is, skipping.\nTry %s --help\n"%(s,sys.argv[0]))
+
+def import_doi(doi):
+	LOG.debug("Import DOI")
+	LOG.debug("Importing: %s"%doi)
+
+def import_url(url):
+	LOG.debug("Import URL")
+	LOG.debug("Importing: %s"%url)
+
+def import_file(f,settings,doi=None):
+	db=xldb.XLibrisDB(settings.db)
+	store=xlstore.XLibrisStore(db)
+	LOG.debug("Import File")
+	LOG.debug("Importing: %s",f)
+	article=get_article(f,doi)
+	if article!=None:
+		# Check for journal abbreviation
+		journal=article.issue.journal
+		LOG.debug("Looking for journal using ISSN %s"%journal.issn.values()[0])
+		issn=store.find_issn(journal.issn.values()[0])
+		LOG.debug("Found %s"%issn)
+		if store.find_issn(journal.issn.values()[0])==None:
+			sys.stderr.write('Enter abbreviation for "%s":\n'%journal.title)
+			journal.abbreviation=sys.stdin.readline().strip()
+		ext=os.path.splitext(f)[1]
+		filename=settings.format_filename(article)+ext
+		LOG.debug("Formated filename: %s",filename)
+		dest=os.path.abspath(os.path.join(settings.doc_dir,filename))
+		LOG.debug("Destination: %s",dest)
+		article.filename=filename
+		if settings.move_file:
+			LOG.debug("Moving %s to %s",f,dest)
+			shutil.move(f,dest)
+		else:
+			LOG.debug("Copying %s to %s",f,dest)
+			shutil.copy(f,dest)
+		store.import_article(article)
+		
+def list_document(args,settings):
+	LOG.debug("List documents")
+
+def bibtex(args,settings):
+	LOG.debug("Generate BIBTex")
+
+def tag(args,settings):
+	LOG.debug("Tag Articles")
+	LOG.debug("Applying tag '%s' to %s"%(args.tag,args.doi))
+
+def mount(args,settings):
+	LOG.debug("Mount filesystem")
+	if args.mountpoint:
+		mountpoint=args.mountpoint
+	else:
+		mountpoint=settings.mountpoint_dir
+	LOG.debug("mountpoint: %s",mountpoint)
+	LOG.debug("original sys.argv: %s",sys.argv)
+	sys.argv=[sys.argv[0],mountpoint]+args.unknown
+	LOG.debug("modified sys.argv: %s",sys.argv)
+	db=xldb.XLibrisDB(settings.db)
+	xls=xlstore.XLibrisStore(db)
+	fs=xlfs.XLibrisFS(xls,settings)
+	fs.parse(errex=1)
+	fs.main()
+
+def setup(args,settings):
+	xlsettings.write_default(args.rc)
+	editor=""
+	try:
+		editor=os.environ['EDITOR']
+	except KeyError:
+		sys.stderr.write("Default editor not set.\nSelect editor or [enter] to skip\n")
+		sys.stderr.write("editor: ")
+		editor=sys.stdin.readline().strip()
+	if editor!="":
+		subprocess.Popen([editor,args.rc]).wait()
+
+	# Get then environment setup
+	xlsettings.create_dirs(args.rc)
+
+	try:
+		xlsettings.check(args.rc)
+	except xlsettings.SettingsException as e:
+		print_setting_exception(e)
+
+def print_setting_exception(e):
+	sys.stderr.write("Encountered problems with setting file %s:\n"%e.value)
+	for p in e.problems:
+		sys.stderr.write('\t')
+		sys.stderr.write(p)
+		sys.stderr.write('\n')
+	sys.stderr.write("Please correct the problems or run:\n\t%s setup -o\nto start with the default settings\n"%sys.argv[0])
+	sys.exit(2)
+
+if __name__ == "__main__":
+#	import atexit
+#	atexit.register(logExit)
+	# Set up the screen handler for logging
+	screen_handler=logging.StreamHandler()
+	screen_handler.setFormatter(formatter)
+	screen_handler.setLevel(logging.ERROR)
+	LOG.addHandler(screen_handler)
+	xlibris.LOG.addHandler(screen_handler)
+
+	rcfile=os.path.expanduser(os.path.join('~','.xlibrisrc.py'))
+	parser = argparse.ArgumentParser('xlibris')
+	parser.add_argument('--rc',required=False,help='The initalization file to use',default=rcfile)
+	parser.add_argument('-v',dest='verbose',action='store_true',help='Verbose output')
+	parser.add_argument('--cmd-help',dest='cmd_help',action='store_true',help='Provides help for the specified command')
+	parser.add_argument('--test', action='store_true', help=argparse.SUPPRESS)
+	subparsers = parser.add_subparsers(help='The command to execute')
+
+	parser_info = subparsers.add_parser('info', help="Print document information")
+	parser_info.add_argument('source',help='PDF(s) to get information on',nargs='+')
+	parser_info.set_defaults(cmd='info',func=info_pdf)
+
+	parser_import = subparsers.add_parser('import', help='Import PDFs')
+	import_group = parser_import.add_mutually_exclusive_group()
+	import_group.set_defaults(method='guess')
+	import_group.add_argument('-f',dest='method',action='store_const',const='file')
+	import_group.add_argument('-d',dest='method',action='store_const',const='doi')
+	import_group.add_argument('-u',dest='method',action='store_const',const='url')
+	parser_import.add_argument('source',help='Document(s) to import.  -f file, -d DOI, -u url',nargs='+')
+	parser_import.set_defaults(cmd='import',func=import_document)
+
+	parser_list = subparsers.add_parser('list', help='List PDFs in the library')
+	parser_list.set_defaults(cmd='list',func=list_document)
+
+	parser_bibtex = subparsers.add_parser('bibtex', help='Generate bibTeX')
+	parser_bibtex.set_defaults(cmd='bibtex',func=bibtex)
+
+	parser_tag = subparsers.add_parser('tag', help='Tag one or more articles')
+	parser_tag.add_argument('tag',help='Tag to apply')
+	parser_tag.add_argument('doi',help='DOI of articles to tag',nargs='+')
+	parser_tag.set_defaults(cmd='tag',func=tag)
+
+	parser_mount = subparsers.add_parser('mount', help='Mount the xlibris filesystem')
+	parser_mount.add_argument('mountpoint',help='Directory to mount',nargs='?')
+	parser_mount.set_defaults(cmd='mount',func=mount)
+
+	parser_setup = subparsers.add_parser('setup', help='Setups the settings and directory structure')
+	parser_setup.add_argument('-o',dest='overwrite',action="store_true",help='Overwrite (and backup) existing setting file with defaults.')
+	parser_setup.set_defaults(cmd='setup',func=setup)
+
+	args,unknown=parser.parse_known_args()
+
+	if args.cmd=='mount':
+		args.unknown=unknown
+	else:
+		args=parser.parse_args()
+
+	if args.verbose:
+		LOG.setLevel(logging.DEBUG)
+		xlibris.LOG.setLevel(logging.DEBUG)
+		screen_handler.setLevel(logging.DEBUG)
+
+	# Read the settings file
+	settings=None
+	try:
+		settings=xlsettings.get_settings(args.rc)
+	except xlsettings.SettingsException as e:
+		if args.cmd!="setup":
+			print_setting_exception(e)
+
+	if args.test:
+		print("sys.argv = %s"%sys.argv)
+		print("args = %s"%args)
+		print("settings = %s"%settings.__dict__)
+		sys.exit()
+
+	# Call the approprate function
+	args.func(args,settings)

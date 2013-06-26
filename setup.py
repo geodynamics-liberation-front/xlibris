@@ -32,7 +32,7 @@ setup(
 	author='Robert I. Petersen',
 	author_email='rpetersen@ucsd.edu', 
 	version=ver,
-	scripts=['src/bin/xlibris'],
+	scripts=['src/scripts/xlibris'],
 	packages=['xlibris'],
 	package_dir={'xlibris': 'src/xlibris'},
 	license='GPL 2.0', 
