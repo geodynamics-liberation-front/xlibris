@@ -22,7 +22,6 @@ class Database(object):
 				create_sql="CREATE TABLE IF NOT EXISTS %s ( %s )"%(name,col_def)
 				LOG.debug('create table : SQL=%s'%create_sql)
 				cur.execute(create_sql)
-			cur.execute(create_sql)
 			cur.close()
 			conn.close()
 	
