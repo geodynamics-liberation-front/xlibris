@@ -2,40 +2,71 @@ import time
 from lazy_collections import LazyMap,LazyList
 from . import LOG
 
+"""
+Class Diagram : http://yuml.me/edit/173cefd2
+
+
+[Article|doi;title;url;filename]
+[Issue|volume;issue]
+[Publication|media_type;year;month;day]
+[Issue_Publication]
+[Article_Publication]
+[Journal|title;abbreviation]
+[ISSN|media_type;number]
+[Tag|name]
+[Issue_publication]->[Publication]
+[Article_publication]->[Publication]
+[Author|given_name;surname]
+[Article]issues-issue[Issue]
+[Article]tags-articles[Tag]
+[Article]authors-articles[Author]
+[Article]publications-[Article_publication]
+[Issue]journal-issues[Journal]
+[Issue]publications-[Issue_publication]
+[Journal]issn-[ISSN]
+"""
+
 class Journal(object):
-	def __init__(self,title=None,abbreviation=None,issn=None,id=None,store=None):
+	def __init__(self,title,abbreviation,id=None,store=None):
 		self.id=id
 		self._store=store
 		self.title=title
 		self.abbreviation=abbreviation
 		self._issn=None
 		self._issues=None
-		if issn:
-			self._issn={}
-			self._issn.update(issn)
 
 	def __getattr__(self,name):
 		if name=='issn':
 			if not self._issn:
-				self._issn=self._store.get_issn_from_journal(self)
+				if self._store:
+					self._issn=self._store.get_issn_from_journal(self)
+				else
+					self._issn={}
 			return self._issn
 		elif name=='issues':
 			if not self._issues:
-				self._issues=self._store.get_issue_from_journal(self)
+				if self._store:
+					self._issues=self._store.get_issue_from_journal(self)
+				else:
+					self._issues=[]
 			return self._issues
 		raise AttributeError(name)
 
+	def __setattr__(self,name,value):
+		if name=='issues':
+			self._issues=value
+		else: 
+			raise AttributeError(name)
+
 class Issue(object):
-	def __init__(self,volume=None,issue=None,journal=None,publications=None,articles=None,id=None,store=None):
+	def __init__(self,volume,issue,id=None,store=None):
 		self.id=id
 		self._store=store
 		self.volume=volume
 		self.issue=issue
-		self._journal=journal
-		self._articles=articles
-		if publications:
-			self._publications={}
-			self._publications.update(publications)
+		self._journal=None
+		self._articles=None
+		self._publications=None
 
 	def add_publication(self,pub):
 		if not self._publications:
@@ -62,21 +93,17 @@ class Issue(object):
 		raise AttributeError(name)
 
 class Article(object):
-	def __init__(self,doi=None,title=None,url=None,issue=None,filename=None,publications=None,authors=None,tags=None,id=None,store=None):
+	def __init__(self,doi,title,url,filename,id=None,store=None):
 		self.id=id
 		self._store=store
 		self.doi=doi
 		self.title=title
 		self.url=url
 		self.filename=filename
-		self._tags=tags
-		self._authors=authors
-		self._issue=issue
-		if publications:
-			self._publications={}
-			self._publications.update(publications)
-		else:
-			self._publications=None
+		self._tags=None
+		self._authors=None
+		self._issue=None
+		self._publications=None
 
 	def add_publication(self,pub):
 		if not self._publications:
@@ -113,7 +140,7 @@ class Article(object):
 		raise AttributeError(name)
 
 class Author(object):
-	def __init__(self,given_name=None,surname=None,id=None,store=None):
+	def __init__(self,given_name,surname,id=None,store=None):
 		self.id=id
 		self._store=store
 		self.given_name=given_name
@@ -128,7 +155,7 @@ class Author(object):
 		raise AttributeError(name)
 
 class Publication(object):
-	def __init__(self,media_type=None,year=None,month=None,day=None,id=None,store=None):
+	def __init__(self,media_type,year,month,day,id=None,store=None):
 		self.id=id
 		self.media_type=media_type
 		self.year=year
@@ -143,7 +170,7 @@ class Publication(object):
 
 
 class Tag(object):
-	def __init__(self,name,articles=None,id=None,store=None):
+	def __init__(self,name,id=None,store=None):
 		self.id=id
 		self._store=store
 		self.name=name
@@ -173,12 +200,8 @@ class XLibrisStore(object):
 	def get_issue_from_article(self,article):
 		return self.issue_from_row(self.db.get_issue_from_article(article.id))
 	def issue_from_row(self,row):
-		i=Issue()
-		i._store=self
-		i.id=row['id']
-		i.volume=row['volume']
-		i.issue=row['issue']
-		return i
+	def __init__(self,volume,issue,id=None,store=None):
+		return Issue(row['volume'], row['issue'], id=row['id'], store=self)
 
 #
 # Issue Publication methods
@@ -200,12 +223,14 @@ class XLibrisStore(object):
 	def get_journal_from_issue(self,issue):
 		return self.journal_from_row(self.db.get_journal_from_issue(issue.id))
 	def journal_from_row(self,row):
-		j=Journal()
-		j._store=self
-		j.id=row['id']
-		j.title=row['title']
-		j.abbreviation=row['abbreviation']
-		return j
+	def __init__(self,title,abbreviation,id=None,store=None):
+		return Journal( row['title'], row['abbreviation'], id=row['id'], store=self)
+	def update_or_create_journal(self,journal):
+		if journal.id:
+		else:
+
+#TODO
+	
 
 #
 # ISSN methods
@@ -230,14 +255,7 @@ class XLibrisStore(object):
 	def get_article_by_filename(self,filename):
 		return self.article_from_row(self.db.get_article_by_filename(filename))
 	def article_from_row(self,row):
-		a=Article()
-		a._store=self
-		a.id=row['id']
-		a.doi=row['doi']
-		a.title=row['title']
-		a.url=row['url']
-		a.filename=row['filename']
-		return a
+		return Article( row['doi'], row['title'], row['url'], row['filename'], id=row['id'], store=self)
 #TODO:move to db
 	def get_articles_from_year(self,year):
 		table_col=self.db._get_columns("article")
@@ -263,13 +281,8 @@ class XLibrisStore(object):
 	def get_publication_years(self):
 		return [r['year'] for r in self.db._select("SELECT DISTINCT year FROM article_publication",['year'],())]
 	def publication_from_row(self,row):
-		pub=Publication()
-		pub.id=row['id']
-		pub.media_type=row['media_type']
-		pub.year=row['year']
-		pub.month=row['month']
-		pub.day=row['day']
-		return pub
+	def __init__(self,media_type,year,month,day,id=None,store=None):
+		return Publication(row['media_type'], row['year'], row['month'], row['day'], id=row['id'], store=self)
 
 #
 # Author methods
@@ -308,13 +321,13 @@ class XLibrisStore(object):
 #
 #  Update methods
 #
-	def add_article(self,article):
+	def update_or_create_article(self,article):
 		issue=article.issue
 		journal=issue.journal
 		#
 		# Import journal (if necessary)
 		# 
-		issn_row=self.db.find_issn(journal.issn.values()[0])
+		issn_row=self.db.get_issn_by(journal.issn.values()[0])
 		if issn_row==None:
 			journal_id=self.db.add_journal(journal)
 			for media_type,issn in journal.issn.iteritems():

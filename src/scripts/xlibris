@@ -163,7 +163,7 @@ def import_file(f,settings,doi=None):
 		else:
 			LOG.debug("Copying %s to %s",f,dest)
 			shutil.copy(f,dest)
-		store.import_article(article)
+		store.add(article)
 		
 def list_document(args,settings):
 	LOG.debug("List documents")
