@@ -2,7 +2,7 @@ import atexit
 import sys
 import os
 
-source= os.path.abspath("../src")
+source=os.path.abspath("../src")
 
 def remove_pyc():
 	for d,child_dir,files in os.walk(source):
@@ -14,6 +14,7 @@ remove_pyc()
 
 sys.path=[source]+sys.path
 import xlibris as xl
+import xlibris.doi as doi
 import xlibris.settings as xlsettings
 import xlibris.xlibris_db as xldb
 import xlibris.xlibris_store as xls
@@ -21,14 +22,17 @@ import xlibris.xlibris_store as xls
 xl.debug_on()
 
 rcfile=os.path.expanduser(os.path.join('~','.xlibrisrc.py'))
+rcfile="./settings.py"
 settings=xlsettings.get_settings(rcfile)
 
-db=xldb.XLibrisDB(settings.db)
+db=xldb.XLibrisDB(settings.db_file)
 store=xls.XLibrisStore(db)
-authors=store.get_all_author()
-berco=authors[3]
-berco_articles=berco.articles
-a=berco_articles[0]
 
-
+def get_test_article():
+    global dois,doi_number,doi_xml,article
+    pdf="pdf/10.1007_s11068-008-9033-8.pdf"
+    dois=doi.get_doi_from_pdf(pdf)
+    doi_number=dois[0]
+    doi_xml=doi.get_doi_xml(doi_number)
+    article=doi.parse_doi_xml(doi_xml)
 
