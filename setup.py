@@ -35,6 +35,7 @@ setup(
 	scripts=['src/scripts/xlibris'],
 	packages=['xlibris'],
 	package_dir={'xlibris': 'src/xlibris'},
+    package_data = {'xlibris' : ['hello_world.pdf']},
 	license='GPL 2.0', 
 	classifiers=[
 'Development Status :: 4 - Beta',

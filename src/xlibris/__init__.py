@@ -1,4 +1,5 @@
 import logging
+# vim: set fileencoding=utf-8 :
 
 LOG=logging.getLogger(__name__)
 

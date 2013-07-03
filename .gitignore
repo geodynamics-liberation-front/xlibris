@@ -22,6 +22,8 @@ lib64
 pip-log.txt
 
 # Unit test / coverage reports
+sandbox
+test/xlibris
 .coverage
 .tox
 nosetests.xml
@@ -34,7 +36,8 @@ nosetests.xml
 .project
 .pydevproject
 
-# Sample PDF
-*.pdf
+# LaTeX stuff
+*.aux
+*.log
 # XML sample directory
 crossref

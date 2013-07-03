@@ -1,4 +1,5 @@
 #from . import LOG
+# vim: set fileencoding=utf-8 :
 import os
 
 class Abbreviations(object):
