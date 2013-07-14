@@ -3,7 +3,7 @@
 import imp
 import os
 import shutil
-import settings as xlsettings
+import pdf as xpdf
 from . import LOG
 
 class Bunch:
@@ -35,7 +35,7 @@ def write_default(dotrc):
 def create_dirs(settings):
     if type(settings) == str:
         settings=read_settings(settings)
-    elif isinstance(settings, xlsettings.Bunch):
+    elif isinstance(settings, Bunch):
         settings = settings.__dict__
     elif type(settings) != dict:
         raise ValueError("Argument must be a str, xlibris.settings.Bunch or dict")
@@ -84,7 +84,7 @@ def check(dotrc):
             LOG.debug('Created temporary file %s',tmp_name)
             tmp_file.write(pkg_resources.resource_string(__name__,"hello_world.pdf"))
         try:
-            contents=settings['pdf_to_text'](tmp_name)
+            contents=xpdf.pdf_to_text(tmp_name)
             if contents.strip() != 'hello world':
                 problems.append("pdf_to_text function ran but did not result in the expected output")
         except:
@@ -92,7 +92,7 @@ def check(dotrc):
         if os.path.exists(tmp_name): os.unlink(tmp_name)
 
     # Check that we can import the necessary modules
-    modules=['bs4','fuse'] 
+    modules=['bs4','fuse','unidecode'] 
     LOG.debug('Checking installed modules %s' % modules)
     for module in modules:
         try:
@@ -103,10 +103,14 @@ def check(dotrc):
     if len(problems)>0:
         raise SettingsException(dotrc,problems)
 
-def get_settings(dotrc):
+settings = None
+def get_settings(dotrc=None):
+    global settings
+    if dotrc != None:
+        settings = Bunch(**read_settings(dotrc))
     #check(dotrc)
     # Check if the dotrc file exists
-    return Bunch(**read_settings(dotrc))
+    return settings
 
 def read_settings(dotrc):
     rcfile=open(dotrc)

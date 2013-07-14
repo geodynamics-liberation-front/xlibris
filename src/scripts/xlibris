@@ -5,24 +5,38 @@ import argparse
 import logging
 import operator
 import os
+import readline
 import shutil
 import subprocess
 import sys
 import traceback
+import urllib
 import xlibris
-import xlibris.xlibris_fs as xlfs
+import xlibris.crossref as crossref
+import xlibris.pdf as xpdf
 import xlibris.settings as xlsettings
-import xlibris.xlibris_store as xlstore
+import xlibris.tex as xtex
+import xlibris.www as www
 import xlibris.xlibris_db as xldb
-import xlibris.doi as doi
+import xlibris.xlibris_fs as xlfs
+import xlibris.xlibris_store as xlstore
 
+# stupid to make PyFlakes happy
+readline
 # The settings object
 settings=None
+# The 'quiet' flag
+quiet=False
+
 # Setup a logger and formatter
 name=os.path.basename(sys.argv[0])
 LOG=logging.getLogger(name)
 LOG.setLevel(logging.INFO)
 formatter = logging.Formatter("%(asctime)s - %(name)s %(funcName)s - %(levelname)s - %(message)s")
+
+def msg(s):
+    if not quiet:
+        sys.stderr.write("%s\n"%s)
 
 URL_SCHEMAS=["http:","https:","ftp:"]
 DOI_SCHEMAS=["doi:","dx.doi.org","10."]
@@ -36,129 +50,248 @@ def guess_source(s):
     else:
         raise ValueError("Unknow source '%s'" % s)
 
-def get_article(pdf,doi_number=None):
-    if not doi_number:
-        LOG.debug("Extracting DOI from %s",pdf)
-        dois=doi.get_doi_from_pdf(pdf)
-        if len(dois)==0:
-            sys.stderr.write("Could not find DOI in PDF, manually enter DOI.\n")
-            sys.stderr.write("DOI: ")
-            doi_number=sys.stdin.readline().strip()
-        elif len(dois)==1:
-            LOG.debug("Found 1 DOI: %s"%dois[0])
-            doi_number=dois[0]
-        else:   
-            LOG.debug("Got DOIs: %s"%dois)
-            doi_number=dois[0]
-            if settings.prompt_doi:
-                sys.stderr.write("Multiple DOI found, select the correct DOI for this document.\n")
-                for n,doi_candidate in enumerate(dois):
-                    sys.stderr.write("[%3d] %s\n"%(n,doi_candidate))
-                doi_ndx=-1
-                while doi_ndx<0 or doi_ndx>=len(dois):
-                    sys.stderr.write("Select DOI 0 to %d [0]: "%(len(doi)-1))
-                    ndx_str=sys.stdin.readline().strip()
-                    if ndx_str=='':
-                        doi_ndx=0
-                    else:
-                        try:
-                            doi_ndx=int(ndx_str)
-                        except:
-                            pass
-                doi_number=dois[doi_ndx]
-    LOG.debug("Using DOI: %s"%doi_number)
-
-    LOG.debug("Getting CrossREF information")
-    doi_xml=doi.get_doi_xml(doi_number)
+def no_doi(source):
+    LOG.debug("Found 0 DOI in %s",source)
     article=None
-    try:
-        article=doi.parse_doi_xml(doi_xml)
-    except:
-        t,v,tb=sys.exc_info()
-        sys.stderr.write("Exception processing %s\n"%doi_number)
-        sys.stderr.write("%s: %s\n"%(t.__name__,v))
-        escaped_doi=doi_number.replace("/","\\\\")
-        log_file=os.path.join(settings.log_dir,escaped_doi+'.log')
-        xml_file=os.path.join(settings.log_dir,escaped_doi+'.xml')
-        sys.stderr.write("Check in %s for details\n"%settings.log_dir)
-        f=open(xml_file,'w')
-        f.write(doi_xml.prettify())
-        f.flush()
-        f.close()
-        f=open(log_file,'w')
-        traceback.print_exception(t,v,tb,None,f)
-        f.flush()
-        f.close()
+    if settings.prompt_doi:
+        while article==None:
+            sys.stderr.write("Could not find DOI in %s, manually enter DOI or [Enter] to skip.\n"%source)
+            doi_number=raw_input('DOI: ').strip().lower()
+            if doi_number=='':
+                break
+            article=get_input_article(doi_number)
     return article
 
-def info_pdf(args,settings):
-    LOG.debug("Getting PDFs info")
-    pdfs=args.pdf
-    LOG.debug(": %s",pdfs)
-    out=sys.stdout
-    for pdf in pdfs:
-        article=get_article(pdf)
-        if article!=None:
-            out.write("%s metadata:\n"%pdf)
-            out.write("Article Title: %s\n"%article.title)
-            out.write("Article DOI:   %s\n"%article.doi)
-            for author in article.authors:
-                out.write("Author:        %s, %s\n"%(author.surname,author.given_name))
-            issue=article.issue
-            journal=issue.journal
-            out.write("Journal:       %s (%s)\n"%(journal.title,journal.abbreviation))  
-            for media_type,issn in journal.issn.items():
-                out.write("ISSN:          %s (%s)\n"%(issn,media_type))
-            out.write("Volume:        %s\n"%issue.volume)
-            out.write("Issue:         %s\n"%issue.issue)
-            for  media_type,publication in issue.publications.items():
-                out.write("Issue Pub:     %s - %s/%s/%s\n"%(media_type,publication.year,publication.month,publication.day))
-            for  media_type,publication in article.publications.items():
-                out.write("Article Pub:   %s - %s/%s/%s\n"%(media_type,publication.year,publication.month,publication.day))
+def verify_doi(article):
+    a=None
+    LOG.debug("Found 1 DOI: %s",article.doi)
+    if settings.prompt_doi:
+        while a==None:
+            sys.stderr.write("%s : '%s'\n"%(article.doi,article.title))
+            authors=', '.join(["%s %s"%(author.given_name,author.surname) for author in article.authors])
+            sys.stderr.write('%s    by %s\n'%(' '*len(article.doi),authors))
+            sys.stderr.write('%s    %s (%s)\n'%(' '*len(article.doi),article.issue.journal.title,article.get_publication_year()))
+            sys.stderr.write('\n')
+            sys.stderr.write("[Enter] to accept, 's' to skip or 'doi:[doi_number]' to enter manually.\n")
+            input_str=raw_input('DOI: ').strip().lower()
+            if input_str=='':
+                a=article
+            elif input_str=='s':
+                break
+            else:
+                a=get_input_article(input_str)
+    else:
+        a=article
+    return a
 
-def import_document(args,settings):
+def select_doi(articles,source):
+    LOG.debug("Got multiple DOIs: %s"%[a.doi for a in articles])
+    article=None
+    if settings.prompt_doi:
+        while article==None:
+            sys.stderr.write("Multiple DOI found, select the correct DOI for %s.\n"%source)
+            for n,a in enumerate(articles):
+                sys.stderr.write("[%3d] %s : '%s'\n"%(n,a.doi,a.title))
+                authors=', '.join(["%s %s"%(author.given_name,author.surname) for author in a.authors])
+                sys.stderr.write('      %s    by %s\n'%(' '*len(a.doi),authors))
+                sys.stderr.write('      %s    %s (%s)\n'%(' '*len(a.doi),a.issue.journal.title,a.get_publication_year()))
+                sys.stderr.write('\n')
+            sys.stderr.write("Select DOI 0 to %d, 's' to skip or 'doi:[doi_number]' to enter manually\n"%(len(articles)-1))
+            input_str=raw_input('DOI [0]: ').strip().lower()
+            if input_str=='':
+                article=articles[0]
+            elif input_str=='s':
+                break
+            else:
+                try:
+                    article=articles[int(input_str)]
+                except ValueError:
+                    article=get_input_article(input_str)
+                except:
+                    pass
+    else:
+        article=articles[0]
+    return article
+
+PROXY='__proxy__'
+def select_pdf(pdfs,source):
+    LOG.debug("Got multiple pdfs: %s" % pdfs )
+    pdf=None
+    if settings.prompt_pdf:
+        while pdf==None:
+            sys.stderr.write("Multiple PDFs found, select the correct PDF for %s.\n"%source)
+            for n,p in enumerate(pdfs):
+                sys.stderr.write("[%3d] %s '\n"%(n,p))
+            sys.stderr.write("Select PDF 0 to %d, 's' to skip, 'p' for proxy PDF or or compete path to PDF\n"%(len(pdfs)-1))
+            input_str=raw_input('PDF [0]: ').strip().lower()
+            if input_str=='':
+                pdf=pdfs[0]
+            elif input_str=='p':
+                pdf=PROXY
+            elif input_str=='s':
+                break
+            else:
+                try:
+                    pdf=pdfs[int(input_str)]
+                except ValueError:
+                    if os.path.exists(input_str):
+                        pdf=input_str
+                except:
+                    pass
+    else:
+        pdf=pdf[0]
+    return pdf
+
+def get_input_article(doi_number):
+    doi_number=doi_number.strip().lower()
+    if doi_number.startswith('http') and not doi_number.startswith('http://dx.doi.org/'): # a url
+        pass
+    else: 
+        # stip any prefix doi: "doi " dx.doi.org/  http://dx.doi.org
+        doi_number[doi_number.index('10.'):]
+    
+    article=crossref.get_article_from_doi(doi_number)
+    if article==None:
+        sys.stderr.write("Unable to get metadata for DOI: %s\n"%doi_number)
+
+    return article
+
+def get_all_articles(dois):
+    LOG.debug("Fetching metadata")
+    msg("Fetching metadata")
+    # Get a unique set of DOIs maintaining the order
+    articles=[]
+    tot=float(len(dois))
+    for n,d in enumerate(dois):
+        sys.stderr.write("%s%3d%% complete"%('\b'*20,100*n/tot))
+        sys.stderr.flush()
+        try:
+            a=crossref.get_article_from_doi(d)
+            if a!=None:
+                articles.append(a)
+        except:
+            LOG.debug("Exception getting metadata for %s\n%s",d,traceback.format_exception)
+
+    sys.stderr.write("%s100%% complete\n"%('\b'*20,))
+
+    return articles
+
+def get_article(pdf):
+    article=None
+    try:
+        LOG.debug("Extracting DOI from %s",pdf)
+        dois=xpdf.get_doi_from_pdf(pdf)
+        LOG.debug("DOIs: %s"%dois)
+        articles=get_all_articles(dois)
+        LOG.debug("Articles: %s"%articles)
+
+        if len(articles)==0:
+            article=no_doi(pdf)
+        elif len(articles)==1:
+            article=verify_doi(articles[0])
+        else:   
+            article=select_doi(articles,pdf)
+        if article==None:
+            return None              
+        LOG.debug("Using DOI: %s"%article.doi)
+        msg(u"Importing %s as '%s' (doi:%s)"%(pdf,article.title,article.doi) )
+    except:
+        LOG.exception("Exception processing %s",pdf)
+    return article
+
+def import_document(args):
     LOG.debug("Import document")
-    LOG.debug("Method: %s"%args.method)
-    LOG.debug("Source(s): %s"%args.source)
-    settings.db=xldb.XLibrisDB(settings.db_file)
-    settings.store=xlstore.XLibrisStore(settings.db)
+    LOG.debug("Method: %s", args.method)
+    LOG.debug("Source(s): %s", args.source)
     for s in args.source:
+        s=unicode(s,'utf-8')
         LOG.debug("Source: %s"%s)
         if args.method=="file":
-            import_file(s, settings)
+            import_file(s)
         elif args.method=="doi":
-            import_doi(s, settings)
+            import_doi(s)
         elif args.method=="url":
-            import_url(s, settings)
+            import_url(s)
         else: # try to guess
             try:
                 method=guess_source(s)
                 if method=="file":
                     LOG.debug("Trying %s as a file"%s)
-                    import_file(s, settings)
+                    import_file(s)
                 elif method=="doi":
                     LOG.debug("Trying %s as a DOI"%s)
-                    import_doi(s, settings)
+                    import_doi(s)
                 elif method=="url":
                     LOG.debug("Trying %s as a URL"%s)
-                    import_url(s, settings)
+                    import_url(s)
             except ValueError:
                 sys.stderr.write("Unable to figure out what '%s' is, skipping.\nTry %s --help\n"%(s,sys.argv[0]))
                 LOG.exception("Unable to figure out what '%s' is, skipping",s)
 
-def import_doi(doi):
+def import_doi(doi_number):
     LOG.debug("Import DOI")
-    LOG.debug("Importing: %s"%doi)
+    LOG.debug("Importing: %s", doi_number)
+    url="http://dx.doi.org/%s" % urllib.quote_plus(doi_number)
+    LOG.debug("Resultant URL: %s", url)
+    import_url(url,doi_number)
 
-def import_url(url):
+def import_url(url,doi_number=None):
     LOG.debug("Import URL")
     LOG.debug("Importing: %s"%url)
+    if doi_number == None:
+        dois=www.get_doi(url)
+    else:
+        dois=[doi_number]
+        
+    articles=get_all_articles(dois)
+    LOG.debug("Articles: %s"%articles)
 
-def import_file(f,settings,doi=None):
+    if len(articles)==0:
+        article=no_doi(url)
+    elif len(articles)==1:
+        article=verify_doi(articles[0])
+    else:   
+        article=select_doi(articles,url)
+    if article==None:
+        msg("Unable to get article metadata, skipping.\n\n\n")
+        return
+
+    # Try to get the PDF from the 'official' url
+    msg('Downloading PDF')
+    pdfs=www.get_pdf(article.url)
+    if len(pdfs) == 0:
+        # We couldn't find a PDF from the official url, so use the one passed in
+        pdfs=www.get_pdf(url)
+
+    if len(pdfs) == 0:
+        sys.stderr.write("Undable to download PDF for %s.\n"%url)
+        input_str=raw_input("'s' to skip, path to PDF  or '[enter]' to import with proxy PDF")
+        if input_str=='s':
+            return
+        elif input_str == '':
+            pdf=xpdf.get_proxy(article)
+        else:
+            if os.path.exists(input_str):
+                pdf=input_str
+    elif len(pdfs) == 1:
+        pdf=pdfs[0]
+    else:
+        pdf=select_pdf(pdfs,url)
+        if pdf == PROXY:
+            pdf=xpdf.get_proxy(article)
+
+    if pdf!=None:
+        import_file(pdf,article)
+        os.unlink(pdf)
+        
+def import_file(f,article=None):
+    msg("============================================\nImporting %s"%f)
     LOG.debug("Import File")
     LOG.debug("Importing: %s",f)
-    article=get_article(f,doi)
     store=settings.store
+    if article==None:
+        article=get_article(f)
+
     if article!=None:
         # Check for journal abbreviation
         LOG.debug("Looking for journal using ISSNs %s"%article.issue.journal.issn.values())
@@ -169,7 +302,7 @@ def import_file(f,settings,doi=None):
         journal=article.issue.journal
         if journal.abbreviation=='':
             sys.stderr.write('Enter abbreviation for "%s":\n'%journal.title)
-            journal.abbreviation=sys.stdin.readline().strip()
+            journal.abbreviation=raw_input().strip()
         ext=os.path.splitext(f)[1]
         filename=settings.format_filename(article)+ext
         LOG.debug("Formated filename: %s",filename)
@@ -183,25 +316,61 @@ def import_file(f,settings,doi=None):
             LOG.debug("Copying %s to %s",f,dest)
             shutil.copy(f,dest)
         store.store_article(article)
+        msg("Import complete.\n\n\n")
+    else:
+        msg("Unable to get article metadata, skipping.\n\n\n")
+
+def alias(args):
+    store=settings.store
+    dest_surname,dest_given_name=[unicode(n.strip(),'utf-8') for n in args.dest.split(',')]
+    dest_author=store.get_author_by_name(dest_given_name, dest_surname)
+    if dest_author != None:
+        for source in args.source:
+            LOG.debug('Aliasing %s to %s',source,args.dest)
+            src_surname,src_given_name=[unicode(n.strip(),'utf-8') for n in source.split(',')]
+            src_author=store.get_author_by_name(src_given_name, src_surname)
+            if dest_author != None:
+                store.alias_author(src_author, dest_author)
+            else:
+                sys.stderr.write('Unable to find author %s (surname: "%s", given_name: "%s")'
+                    % (source, src_given_name, src_surname))
+    else:
+        sys.stderr.write('Unable to find author %s (surname: "%s", given_name: "%s")'
+            % (args.source, src_given_name, src_surname))
         
-def list_document(args,settings):
-    LOG.debug("List documents")
-
-def bibtex(args,settings):
+def bibtex(args):
     LOG.debug("Generate BIBTex")
+    articles=[]
+    for pdf in args.source:
+        filename = unicode(os.path.basename(pdf),'utf-8')
+        article=settings.store.get_article_by_filename(filename)
+        if article!=None:
+            articles.append(article)
+        else:
+            msg("Article not found : %s" % filename)
+    references=xtex.article_to_bibtex(articles)
+    keys=sorted(references.keys())
+    for k in keys:
+        #sys.stdout.write(references[k].encode('utf-8'))
+        try:
+            sys.stdout.write(references[k])
+        except UnicodeEncodeError:
+            LOG.exception("BibTeX Key : %s",k)
+        sys.stdout.write('\n')
 
-def tag(args,settings):
-    settings.db=xldb.XLibrisDB(settings.db_file)
-    store=xlstore.XLibrisStore(settings.db)
-    filename=os.path.basename(args.source)
-    article=store.get_article_by_filename(filename)
+def tag(args):
+    filename = unicode(os.path.basename(args.source),'utf-8')
+    article=settings.store.get_article_by_filename(filename)
     if article != None:
         for name in args.tag:
+            name=unicode(name,'utf-8')
             t=xlstore.Tag(name)
-            store.tag_article(article,t)
-        
+            settings.store.tag_article(article,t)
+    else:
+        sys.stderr.write('Unable to find article for file %s' 
+            % os.path.basename(args.source))
 
-def mount(args,settings):
+def mount(args):
     LOG.debug("Mount filesystem")
     if args.mountpoint:
         mountpoint=args.mountpoint
@@ -211,21 +380,20 @@ def mount(args,settings):
     LOG.debug("original sys.argv: %s",sys.argv)
     sys.argv=[sys.argv[0],mountpoint]+args.unknown
     LOG.debug("modified sys.argv: %s",sys.argv)
-    db=xldb.XLibrisDB(settings.db_file)
-    xls=xlstore.XLibrisStore(db)
-    fs=xlfs.XLibrisFS(xls,settings)
+    fs=xlfs.XLibrisFS(settings.store,settings)
     fs.parse(errex=1)
     fs.main()
 
-def setup(args,settings):
+def setup(args):
     xlsettings.write_default(args.rc)
     editor=""
+# TODO prompt to edit settings file
     try:
         editor=os.environ['EDITOR']
     except KeyError:
         sys.stderr.write("Default editor not set.\nSelect editor or [enter] to skip\n")
         sys.stderr.write("editor: ")
-        editor=sys.stdin.readline().strip()
+        editor=raw_input().strip()
     if editor!="":
         subprocess.Popen([editor,args.rc]).wait()
 
@@ -237,10 +405,10 @@ def setup(args,settings):
     except xlsettings.SettingsException as e:
         print_setting_exception(e)
 
-def check(args,settings):
+def check(args):
     try:
         xlsettings.check(args.rc)
-        sys.stdout.write("All settings look ok.\n")
+        sys.stderr.write("All settings look ok.\n")
     except xlsettings.SettingsException as e:
         print_setting_exception(e)
 
@@ -270,24 +438,23 @@ if __name__ == "__main__":
     parser.add_argument('--test', action='store_true', help=argparse.SUPPRESS)
     subparsers = parser.add_subparsers(help='The command to execute')
 
-    parser_info = subparsers.add_parser('info', help="Print document information")
-    parser_info.add_argument('source',help='PDF(s) to get information on',nargs='+')
-    parser_info.set_defaults(cmd='info',func=info_pdf)
-
     parser_import = subparsers.add_parser('import', help='Import PDFs')
     import_group = parser_import.add_mutually_exclusive_group()
     import_group.set_defaults(method='guess')
     import_group.add_argument('-f',help='import source as a file',dest='method',action='store_const',const='file')
     import_group.add_argument('-d',help='Import source as a DOI',dest='method',action='store_const',const='doi')
     import_group.add_argument('-u',help='Import source as a url',dest='method',action='store_const',const='url')
-    parser_import.add_argument('source',help='Document(s) to import.  -f file, -d DOI, -u url',nargs='+')
+    parser_import.add_argument('source',help='Document(s) to import.  -f file, -d DOI, -u url', nargs='+')
     parser_import.set_defaults(cmd='import',func=import_document)
 
-    parser_list = subparsers.add_parser('list', help='List PDFs in the library')
-    parser_list.set_defaults(cmd='list',func=list_document)
+    parser_alias = subparsers.add_parser('alias', help='Alisa duplicate author entries, lookups for SOURCE will return DEST')
+    parser_alias.add_argument('source',help='List of author names to alias ("surname, given_name")', nargs='+')
+    parser_alias.add_argument('dest',help='Author name to alias to ("surname, given_name")')
+    parser_alias.set_defaults(cmd='alias',func=alias)
 
     parser_bibtex = subparsers.add_parser('bibtex', help='Generate bibTeX')
     parser_bibtex.set_defaults(cmd='bibtex',func=bibtex)
+    parser_bibtex.add_argument('source',help='PDF documents', nargs='+')
 
     parser_tag = subparsers.add_parser('tag', help='Tag one or more articles')
     parser_tag.add_argument('source',help='Document to tag')
@@ -329,19 +496,23 @@ if __name__ == "__main__":
     try:
         settings=xlsettings.get_settings(args.rc)
     except xlsettings.SettingsException as e:
-        if args.cmd!="setup":
-            print_setting_exception(e)
+        print_setting_exception(e)
 
     if args.test:
-        print("sys.argv = %s"%sys.argv)
-        print("args = %s"%args)
-        print("settings = %s"%settings.__dict__)
+        sys.stdout.write("sys.argv = %s\n"%sys.argv)
+        sys.stdout.write("args = %s\n"%args)
+        sys.stdout.write("settings = %s\n"%settings.__dict__)
         sys.exit(0)
 
-    # Convert all strings to UNICODE
-    for k,v in args.__dict__.iteritems():
-       if type(args.__dict__[k]) == str:
-           args.__dict__[k]=unicode(v,'utf-8') 
+#    # Convert all strings to UNICODE
+#    for k,v in args.__dict__.iteritems():
+#       if type(args.__dict__[k]) == str:
+#           args.__dict__[k]=unicode(v,'utf-8') 
     
     # Call the approprate function
-    args.func(args,settings)
+    try:
+        settings.db=xldb.XLibrisDB(settings.db_file)
+        settings.store=xlstore.XLibrisStore(settings.db)
+        args.func(args)
+    except KeyboardInterrupt:
+        msg("\nCancled")

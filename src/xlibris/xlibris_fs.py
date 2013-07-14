@@ -50,6 +50,7 @@ class DelegatedFS(fuse.Fuse):
                     or the time of creation on Windows).
         """
         LOG.debug("getattr: %s", path)
+        #TODO: revisit this last replacement
         path=unicode(path,"utf-8").replace("\ ", " ").replace('\\\\', '\\')
         parts=get_path_parts(path)
         depth=len(parts)
@@ -78,7 +79,7 @@ class DelegatedFS(fuse.Fuse):
 
     def readdir(self,path,offset):
         LOG.debug("readdir: %s (%d)",path,offset)
-        dirlist=['.','..']
+        #TODO: revisit this last replacement
         path=unicode(path,"utf-8").replace("\ "," ").replace('\\\\','\\')
         parts=get_path_parts(path)
         depth=len(parts)
@@ -87,7 +88,7 @@ class DelegatedFS(fuse.Fuse):
             dirlist=self.root
         # The directories just under root
         elif parts[0] in self.paths:
-            dirlist=['.','..']
+            dirlist=[u'.',u'..']
             try:
                 self.paths[parts[0]].readdir(path,parts,depth,dirlist)
             except:
@@ -156,13 +157,13 @@ class XLDelegateFS(object):
 #
 class AuthorFS(XLDelegateFS):
     def _author_to_dir(self,author):
-        return author.surname+', '+author.given_name
+        return u'%s, %s'%(author.surname, author.given_name)
 
     def _dir_to_author(self,dirname):
         surname,given_name=[ n.strip() for n in dirname.split(',') ]
         return self.store.get_author_by_name(given_name,surname)
 
-    def getattr(self, path,parts,depth,st):
+    def getattr(self, path, parts, depth, st):
         if depth==2:
             # /author/[author]
             st.st_mode = stat.S_IFDIR | 0555
@@ -401,7 +402,8 @@ class XLibrisFS(DelegatedFS):
         "journal":JournalFS(store,settings),
         "tag":TagFS(store,settings),
         "publication_year":PubYearFS(store,settings),
-        "title":TitleFS(store,settings)}
+#        "title":TitleFS(store,settings)
+        }
         DelegatedFS.__init__(self, paths,*args, **kw)
         LOG.debug("Init complete.")
 

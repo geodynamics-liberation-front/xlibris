@@ -5,10 +5,10 @@ from database import Database
 """
 Database Diagram : http://yuml.me/edit/f64b6ce7
 
-[article|⚷ id : INTEGER;doi : TEXT UNIQUE;title : TEXT;url : TEXT;filename : TEXT; issue_id : INTEGER]
+[article|⚷ id : INTEGER;doi : TEXT UNIQUE;title : TEXT;url : TEXT;filename : TEXT;first_page : INTEGER;last_page : INTEGER;issue_id : INTEGER]
 [article_publication|⚷ id : INTEGER;article_ID : INTEGER;year : INTEGER;month : INTEGER;day : INTEGER;media_type : TEXT] 
 [author_article|author_id : INTEGER;article_id : INTEGER] 
-[author|⚷ id : INTEGER;given_name : TEXT;surname : TEXT] 
+[author|⚷ id : INTEGER;given_name : TEXT;surname : TEXT;alias_to : INTEGER] 
 [article_tag|article_id : INTEGER;tag_id : INTEGER] 
 [tag|⚷ id : INTEGER;name : TEXT UNIQUE] 
 [issue|⚷ id : INTEGER ;journal_id : INTEGER;volume : TEXT; issue : TEXT]
@@ -62,6 +62,8 @@ class XLibrisDB(Database):
                     ('title','TEXT'),
                     ('url','TEXT'),
                     ('filename','TEXT'),
+                    ('first_page','INTEGER'),
+                    ('last_page','INTEGER'),
                     ('issue_id','INTEGER')],
         'article_publication': [('id','INTEGER PRIMARY KEY'),
                                 ('article_id','INTEGER'),
@@ -179,6 +181,9 @@ class XLibrisDB(Database):
         if given_name!=None: equal['given_name']=given_name
         if surname!=None: equal['surname']=surname
         return self._get_row('author',equal=equal)
+    def alias_author(self, src_author_id, dest_author_id):
+        self._update('author',{'alias_to':dest_author_id},{'id':src_author_id})
+        self._update('author_article',{'author_id':dest_author_id},{'author_id':src_author_id})
     def search_author(self,given_name=None,surname=None):
         like={}
         if given_name!=None: like['given_name']=given_name
@@ -230,8 +235,8 @@ class XLibrisDB(Database):
 #
 # Article Methods
 #
-    def add_article(self,doi,title,url,filename,issue_id):
-        return self._insert('article',[doi,title,url,filename,issue_id])
+    def add_article(self,doi,title,url,filename,first_page,last_page,issue_id):
+        return self._insert('article',[doi,title,url,filename,first_page,last_page,issue_id])
     def get_article(self,id):
         return self._get_row('article',equal={'id':id})
     def get_all_article(self):
@@ -253,8 +258,15 @@ class XLibrisDB(Database):
         return  None if len(rows)==0 else rows[0]
     def get_article_from_issue(self,issue_id):
         return self._get_rows("article",{},{"issue_id":issue_id})
-    def update_article(self,id,doi,title,url,filename):
-        return self._update('article',{'doi':doi,'title':title,'url':url,'filename':filename},{'id':id})
+    def update_article(self,id,doi,title,url,filename,first_page,last_page):
+        return self._update('article',
+                           {'doi':doi,
+                            'title':title,
+                            'url':url,
+                            'filename':filename,
+                            'first_page':first_page,
+                            'last_page':last_page},
+                           {'id':id})
 
 #
 # Article Publication Methods

@@ -35,7 +35,7 @@ setup(
 	scripts=['src/scripts/xlibris'],
 	packages=['xlibris'],
 	package_dir={'xlibris': 'src/xlibris'},
-    package_data = {'xlibris' : ['hello_world.pdf']},
+    package_data = {'xlibris' : ['hello_world.pdf','utl.p']},
 	license='GPL 2.0', 
 	classifiers=[
 'Development Status :: 4 - Beta',
@@ -43,5 +43,6 @@ setup(
 'License :: OSI Approved :: GNU General Public License (GPL)',
 'Programming Language :: Python'
 	],
+    install_requires=['beautifulsoup4','fuse_python>=0.2','unidecode'],
 	long_description=read('README.md')
 )

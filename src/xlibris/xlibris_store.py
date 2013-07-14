@@ -28,6 +28,19 @@ Class Diagram : http://yuml.me/edit/173cefd2
 [Journal]issn-[ISSN]
 """
 
+class ISSNDict(dict):
+    def __init__(self, *args, **kw):
+        d=dict(*args, **kw)
+        for k,v in d.iteritems():
+            self[k]=v
+
+    def __setitem__(self,key,value):
+            try:
+                value=value.replace('-','')
+            except: 
+                pass
+            dict.__setitem__(self,key,value)
+
 class Journal(object):
     def __init__(self,title,abbreviation,id=None,store=None):
         self.id=id
@@ -43,7 +56,7 @@ class Journal(object):
                 if self._store:
                     self._issn=self._store.get_issn_from_journal(self)
                 else:
-                    self._issn={}
+                    self._issn=ISSNDict()
             return self._issn
         elif name=='issues':
             if not self._issues:
@@ -110,13 +123,15 @@ class Issue(object):
         return "XLibrisIssue(vol %s, issue %s)" % (self.volume, self.issue)
 
 class Article(object):
-    def __init__(self,doi,title,url,filename,id=None,store=None):
+    def __init__(self,doi,title,url,filename,first_page,last_page,id=None,store=None):
         self.id=id
         self._store=store
         self.doi=doi
         self.title=title
         self.url=url
         self.filename=filename
+        self.first_page=first_page
+        self.last_page=last_page
         self._tags=None
         self._authors=None
         self._issue=None
@@ -126,6 +141,16 @@ class Article(object):
         if not self._publications:
             self._load_publications()
         self._publications[pub.media_type]=pub
+
+    def get_publication_year(self):
+        if 'print' in self.publications:
+            year=self.publications['print'].year
+        elif 'print' in self.issue.publications:
+            year=self.issue.publications['print'].year
+        else:
+            year=sorted([p.year for p in self.issue.publications.values()]+
+                        [p.year for p in self.publications.values()])[0]
+        return year
 
     def get_earliest_publication(self):
         if not self._publications:
@@ -160,6 +185,8 @@ class Article(object):
             if not self._issue:
                 self._issue=self._store.get_issue_from_article(self)
             return self._issue
+        elif name=='earliest_publication':
+            return self.get_earliest_publication()
         raise AttributeError(name)
 
     def __setattr__(self,name,value):
@@ -186,6 +213,18 @@ class Author(object):
             return self._articles
         raise AttributeError(name)
 
+    def __hash__(self):
+        return self.surname.__hash__() + self.given_name.__hash__()
+    
+    def __eq__(self,other):
+        return self.__hash__()==other.__hash__()
+
+    def __ne__(self,other):
+        return self.__hash__()!=other.__hash__()
+
+    def __cmp__(self,other):
+        return self.__hash__()-other.__hash__()
+
     def __str__(self):
         return "XLibrisAuthor(%s, %s)" % (self.surname, self.given_name)
 
@@ -198,9 +237,9 @@ class Publication(object):
         self.day=day
 
     def time(self):
-        day=1 if self.day==None else self.day
-        month=1 if self.month==None else self.month
-        year=1970 if self.year==None else self.year
+        day=1 if self.day==None or self.day=='' else self.day
+        month=1 if self.month==None or self.month=='' else self.month
+        year=1 if self.year==None or self.year=='' else self.year
         return time.mktime(time.strptime("%s %s %s"%(day,month,year),"%d %m %Y"))
 
     def __str__(self):
@@ -325,7 +364,7 @@ class XLibrisStore(object):
 # ISSN methods
 #
     def get_issn_from_journal(self,journal):
-        return { r['media_type']:r['number'] for r in self.db.get_issn_from_journal(journal.id) }
+        return ISSNDict([(r['media_type'],r['number']) for r in self.db.get_issn_from_journal(journal.id)] )
 
 
 #
@@ -341,13 +380,13 @@ class XLibrisStore(object):
         return LazyList(self.get_article,[r['id'] for r in self.db.get_article_from_issue(issue.id)])
     def get_article_from_author(self,author):
         return LazyList(self.get_article,[r['id'] for r in self.db.get_article_from_author(author.id)])
-    def get_article_from_author_by_title(self, author,title):
-        return self.article_from_row(self.db.get_article_from_author_by_title(author.id,title))
+    def get_article_from_author_by_title(self, author, title):
+        return self.article_from_row(self.db.get_article_from_author_by_title(author.id, title))
     def get_article_by_filename(self,filename):
         return self.article_from_row(self.db.get_article_by_filename(filename))
     def article_from_row(self,row):
         if row==None: return None
-        return Article( row['doi'], row['title'], row['url'], row['filename'], id=row['id'], store=self)
+        return Article( row['doi'], row['title'], row['url'], row['filename'], row['first_page'], row['last_page'], id=row['id'], store=self)
     def get_article_from_year(self,year):
         return [self.article_from_row(r) for r in self.db.get_article_from_year(year)]
     def store_article(self,article):
@@ -360,9 +399,9 @@ class XLibrisStore(object):
                 article.id=article_row['id']
                 article._store=self
         if article.id != None:
-            self.db.update_article(article.id,article.doi,article.title,article.url,article.filename)
+            self.db.update_article(article.id,article.doi,article.title,article.url,article.filename,article.first_page,article.last_page)
         else:
-            article.id=self.db.add_article(article.doi,article.title,article.url,article.filename,article.issue.id)
+            article.id=self.db.add_article(article.doi,article.title,article.url,article.filename,article.first_page,article.last_page,article.issue.id)
             article._store=self
         # Update the publications
         if article._publications:
@@ -414,15 +453,20 @@ class XLibrisStore(object):
     def get_author(self,id):
         return self.author_from_row(self.db.get_author(id))
     def get_all_author(self):
-        return [self.author_from_row(r) for r in self.db.get_all_author()]
+        return set([self.author_from_row(r) for r in self.db.get_all_author()])
     def search_author(self,given_name=None,surname=None):
-        return [self.author_from_row(r) for r in self.db.search_author(given_name,surname)]
+        return set([self.author_from_row(r) for r in self.db.search_author(given_name,surname)])
     def get_author_from_article(self,article):
         return LazyList(self.get_author,[r['id'] for r in self.db.get_author_from_article(article.id)])
     def get_author_by_name(self,given_name,surname):
         return self.author_from_row(self.db.get_author_by_name(given_name,surname))
+    def alias_author(self,source,dest):
+        self.db.alias_author(source.id, dest.id)
     def author_from_row(self,row):
         if row==None: return None
+        # Resolve alaias
+        if row['alias_to']!=None and row['alias_to']!='':
+            row=self.db.get_author(row['alias_to'])
         return Author(row['given_name'],row['surname'],id=row['id'],store=self)
     def store_author(self,author):
         # Update the journal

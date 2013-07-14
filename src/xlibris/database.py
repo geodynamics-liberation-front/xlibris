@@ -41,7 +41,7 @@ class Database(object):
         table_col = self._get_columns(table)
         for column in table_col:
             if column in like:
-                val_list.append(' % '+like[column]+' % ')
+                val_list.append('%'+like[column]+'%')
                 wheres.append(' % s like ?' % column)
             if column in equal:
                 val_list.append(equal[column])

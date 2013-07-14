@@ -14,15 +14,19 @@ remove_pyc()
 
 sys.path=[source]+sys.path
 import xlibris as xl
+import xlibris.crossref as xref
 import xlibris.doi as doi
+import xlibris.pdf as xpdf
 import xlibris.settings as xlsettings
+import xlibris.tex as xtex
+import xlibris.www as www
 import xlibris.xlibris_db as xldb
 import xlibris.xlibris_store as xls
 
 xl.debug_on()
 
 rcfile=os.path.expanduser(os.path.join('~','.xlibrisrc.py'))
-rcfile="./settings.py"
+#rcfile="./settings.py"
 settings=xlsettings.get_settings(rcfile)
 
 db=xldb.XLibrisDB(settings.db_file)
