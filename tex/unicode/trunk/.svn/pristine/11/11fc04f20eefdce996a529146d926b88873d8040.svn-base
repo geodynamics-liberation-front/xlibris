@@ -1,0 +1,108 @@
+This is a generated file for the LaTeX (2e + expl3) validation system.
+Don't change this file in any respect.
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+Author: Joseph Wright
+============================================================
+TEST 1: Name a stream
+============================================================
+Defining \testa on line ...
+Defining \testb on line ...
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/command-already-defined"
+! 
+! Control sequence \testa already defined.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.38 }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| This is a coding error.
+| 
+| LaTeX has been asked to create a new control sequence '\testa' but this name
+| has already been used elsewhere.
+| 
+| The current meaning is:
+|   \char"10
+|...............................................
+Defining \testa on line ...
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/command-already-defined"
+! 
+! Control sequence \testb already defined.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.38 }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| This is a coding error.
+| 
+| LaTeX has been asked to create a new control sequence '\testb' but this name
+| has already been used elsewhere.
+| 
+| The current meaning is:
+|   \char"10
+|...............................................
+Defining \testb on line ...
+============================================================
+============================================================
+TEST 2: Open a write
+============================================================
+\test=\write4
+============================================================
+============================================================
+TEST 3: Close a write
+============================================================
+============================================================
+============================================================
+TEST 4: Write now
+============================================================
+============================================================
+============================================================
+TEST 5: Write to log
+============================================================
+abcd
+\l_test_tl 
+============================================================
+============================================================
+TEST 6: Write to terminal
+============================================================
+abcd
+\l_test_tl 
+============================================================
+============================================================
+TEST 7: Write at shipout
+============================================================
+============================================================
+============================================================
+TEST 8: Write at shipout
+============================================================
+============================================================
+============================================================
+TEST 9: Close iow
+============================================================
+\g__file_internal_ior=\read1
+(testwrite.log) (testwrite.log
+test
+)
+============================================================

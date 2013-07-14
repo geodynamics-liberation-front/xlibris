@@ -1,0 +1,78 @@
+% \iffalse
+%% File xoutput.dtx (C) Copyright 1999-2000 Frank Mittelbach, David Carlisle, Chris Rowley
+%%                  (C) Copyright 2001,2004-2007 Frank Mittelbach, The LaTeX3 Project
+%%                  (C) Copyright 2008-2012 The LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3c of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the ``xor bundle'' (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/svnroot/experimental/trunk/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX Project Team.
+%%
+%% -----------------------------------------------------------------------
+%%
+\RequirePackage{l3bootstrap}
+\GetIdInfo $Id: xoutput.dtx 3991 2012-07-16 19:00:35Z joseph $
+          {xoutput}
+\ProvidesExplPackage{\ExplFileName}
+  {\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+% \fi
+%
+%
+%    \begin{macrocode}
+\RequirePackage{
+  calc,
+  expl3
+}
+% this needs a bit of further thought and the names may have to change. the
+% basic idea that if you want to base the default value of some tl kind of
+% key on some other key value then right now this can't be directly specified in
+% the template (perhaps it should). so what this below does is the following:
+% we set the key to a value which one can't specify with  |\tl_set:Nn| (i.e.,
+% basically invalid) and later test if this value is still the case.
+
+\cs_new_nopar:Npn \TP_unset_key:N #1 {
+    \cs_set_eq:NN #1 \scan_stop:
+}
+
+\cs_new_eq:NN \if_TP_key_unset:NT \cs_if_free:NT
+\cs_new_eq:NN \if_TP_key_unset:NF \cs_if_free:NF
+
+\RequirePackage {
+  xtemplate,
+  xmarks,
+  xparse,
+  xo-trace,xo-or,
+  xo-here,
+  xo-place,xo-page,xo-footnote,xo-float,xo-capt,xo-final,
+  xo-new,
+}
+%    \end{macrocode}
+%
+%
+%
+% \endinput
+\endinput

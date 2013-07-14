@@ -1,0 +1,1082 @@
+% \iffalse
+%% File xo-float.dtx (C) Copyright 1999-2000 Frank Mittelbach, David Carlisle, Chris Rowley
+%%                   (C) Copyright 2001,2004-2009 Frank Mittelbach, The LaTeX3 Project
+%%                   (C) Copyright 2010-2012 The LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3c of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the ``xor bundle'' (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/svnroot/experimental/trunk/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX Project Team.
+%%
+%% -----------------------------------------------------------------------
+%%
+\RequirePackage{l3bootstrap}
+\GetIdInfo $Id: xo-float.dtx 4482 2013-04-24 21:05:12Z joseph $
+          {xo-float (part of xor)}
+\ProvidesExplPackage{\ExplFileName}
+  {\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+% \fi
+%
+%
+%  \begin{macro}{\l_xor_curr_float_sequence_class_tl}
+%    \begin{macrocode}
+\tl_new:N\l_xor_curr_float_sequence_class_tl
+%    \end{macrocode}
+%  \end{macro}
+%
+%  \begin{macro}{\l_xor_curr_float_type_tl}
+%    \begin{macrocode}
+\tl_new:N\l_xor_curr_float_type_tl
+%    \end{macrocode}
+%  \end{macro}
+%  
+% \begin{macro}{\or_float_allocate_box:N}
+%   Recovers the name of an available insert from the list of usable inserts.
+%   This approach means that inserts can be released in a non-ordered fashion,
+%   which is needed as different float types may be typeset out of order with
+%   each other.
+%    \begin{macrocode}
+\cs_new_protected:Npn \or_float_allocate_box:N #1
+  {
+    \seq_gpop_left:NNF \g_xor_float_free_seq #1
+      { % TEMP - needs a pure LaTeX3 tracking system
+        \exp_args:Nc \insert_new:N { bx@ \int_use:N \insc@unt }
+        \tl_set:Nx #1 { \exp_not:c { bx@ \int_use:N \insc@unt } }
+      }
+  }
+%    \end{macrocode}
+%\end{macro}
+%
+%
+% \begin{macro}{\@xfloat}
+% The start of a float environment.
+% Unlike \LaTeXe, now save the float as a horizontal list.
+%    \begin{macrocode}
+\cs_set_nopar:Npn \@xfloat #1[#2]{%
+%<*trace>
+\trace_push:n{float~environment}
+%</trace>
+  \@nodocument
+% #2 is either user supplied or |\g_xor_type_#1_allowed_areas_tl|
+  \tl_set:Nn \l_xor_this_allowed_areas_tl {#2}
+  \tl_set:Nn \l_xor_curr_float_type_tl {#1}
+%    \end{macrocode}
+%    Next line could be inline since it is used only once
+%    now.\footnote{Change?}
+%    \begin{macrocode}
+  \cs_set_eq:Nc \l_xor_curr_float_sequence_class_tl {g_xor_type_ #1 _class_tl}
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+  \cs_set_eq:Nc \float@counter {g_xor_type_ #1  _counter_tl}
+%    \end{macrocode}
+%    Floats (not caption) increment counter:
+%    \begin{macrocode}
+  \refstepcounter\float@counter
+  \mode_if_horizontal:T { \@bsphack }
+  \mode_if_inner:TF
+%FMi penalty leftover?
+  {   \@parmoderr\@floatpenalty\c_zero }
+  {
+    \or_float_allocate_box:N \g_xor_curr_float_box_tl
+%      {
+      \int_gincr:N \g_xor_flseq_int
+      \marks_put:VV \l_xor_curr_float_sequence_class_tl \g_xor_flseq_int
+      \global\toks \g_xor_curr_float_box_tl {}
+%      }
+  }
+%    \end{macrocode}
+%    
+%  Save |\g_xor_curr_float_box_tl| as an |\hbox|.
+%    \begin{macrocode}
+  \tl_gset_eq:NN \g_saved_label_tl \c_empty_tl
+  \hbox_gset_inline_begin:N \g_xor_curr_float_box_tl
+%    \end{macrocode}
+%    The float body is typeset in a normalised environment, i.e., we
+%    reset colour and font. This is followed by a call to
+%    |\g_xor_type_TYPE_body_tl| to allow the designer to set up special
+%    conventions for each float type, e.g., a special font or font
+%    size or a special colour, etc.
+%    \begin{macrocode}
+      \color@begingroup
+       \normalcolor
+       \normalfont
+       \normalsize
+       \use:c {g_xor_type_ \l_xor_curr_float_type_tl _body_tl}
+%    \end{macrocode}
+%    And inside floats we don't want any alignment points since they
+%    will never be seen in the galley---this may not be enough as
+%    something inside might turn them on again so this needs further
+%    thought\footnote{check/FIX}
+%    \begin{macrocode}
+       \IgnoreAlignToGrid
+       \ignorespaces}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\g_saved_label_tl}
+%    \begin{macrocode}
+\tl_new:N \g_saved_label_tl
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\@endfloatbox}
+% The end of a float environment.
+% First finish off the box assignment. Then make a copy in a second box.
+% The current code makes use of the fact that the allocated boxes
+% are in two continuous runs, |\sbx@offset| apart.
+%    \begin{macrocode}
+\cs_set_nopar:Npn  \@endfloatbox{%
+  \unskip
+      \outer@nobreak
+  \color@endgroup
+  \hbox_gset_inline_end:
+%    \end{macrocode}
+%    Next line calculates the span count for this float. This should change to
+%    simply store the width of the float and calculate the span count when the
+%    float is placed since the current column width may change over time. For
+%    another rainy day.\footnote{fix}
+%    \begin{macrocode}
+  \int_set:Nn \SPANCNT {1}
+  \dim_set:Nn \l_tmpa_dim {\wd \g_xor_curr_float_box_tl }
+  \dim_sub:Nn \l_tmpa_dim \columnwidth 
+
+  \dim_while_do:nNnn \l_tmpa_dim > \c_zero_dim
+    {
+     \int_incr:N \SPANCNT
+     \dim_sub:Nn \l_tmpa_dim \columnwidth
+     \dim_sub:Nn \l_tmpa_dim \columnsep 
+    }
+  \int_compare:nNnT \SPANCNT > \g_xor_cols_int
+    {
+%<*trace>
+     \trace:n{WARNING:~ float~ spans~ more~ cols~ than~ available:~ 
+              (\int_use:N \SPANCNT > \int_use:N\g_xor_cols_int)}
+%</trace>
+     \int_set_eq:NN \SPANCNT \g_xor_cols_int
+    }
+%    \end{macrocode}
+%    
+%    \begin{macrocode}
+  \edef\@tempa{
+    \global\toks\g_xor_curr_float_box_tl{
+      {\the\toks\g_xor_curr_float_box_tl}{ \int_use:N \SPANCNT }
+      {\g_saved_label_tl}
+      {\csname the\float@counter \endcsname}
+      {\l_xor_this_allowed_areas_tl}
+      {\l_xor_curr_float_type_tl}
+      {\int_use:N \g_xor_flseq_int}
+    }}
+ \@tempa
+%<*trace>
+\trace:n{\the\toks\g_xor_curr_float_box_tl}
+%</trace>
+%    \end{macrocode}
+%    Simple temporary interface to get here floats for testing. Needs
+%    replacement!\footnote{FIX!!!}
+%    \begin{macrocode}
+   \tl_set:Nn \l_tmpa_tl {h}
+   \tl_if_eq:NNTF \l_xor_this_allowed_areas_tl \l_tmpa_tl
+     \xor_setup_here_float:
+     { \seq_gput_right:No \g_xor_floats_active_seq \g_xor_curr_float_box_tl }
+%<*trace>
+\trace_pop:n{float~environment}
+%</trace>
+}
+%    \end{macrocode}
+% \end{macro}
+%
+
+% \begin{macro}{\SPANCNT}
+%    Missing interface\ldots\ right now we have to manually set the
+%    span count if we want floats spanning more than one column
+%    \begin{macrocode}
+\int_new:N \SPANCNT %%% do properly one day
+\int_set:Nn \SPANCNT { \c_one }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\g_xor_flseq_int}
+%    |\g_xor_flseq_int|  is the counter used to uniquely  refer
+%    to the floats, it is incremented whenever we encounter a new float.
+%    \begin{macrocode}
+\int_new:N \g_xor_flseq_int
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\label}
+%    Modify to save the label string.\footnote{Make this work with
+%    \textsf{xlang} and the new cross reference model. MH}
+%    \begin{macrocode}
+\cs_set_nopar:Npn \label#1{\@bsphack
+  \tl_gset:Nn \g_saved_label_tl {#1}
+  \protected@write\@auxout{}%
+         {\string\newlabel{#1}{{\@currentlabel}{\thepage}}}%
+  \@esphack}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%\begin{macro}{\l_floattypesetup_area_clist}
+%    \begin{macrocode}
+\clist_new:N \l_floattypesetup_area_clist
+%    \end{macrocode}
+%\end{macro}
+%
+%
+%
+% \begin{macro}{\DeclareFloatType}
+%    A float type is an identifier like ``figure'' the defines a class
+%    (?) of floats of floats which have certain attributes in common,
+%    e.g., they have the same fixed caption text (e.g. \texttt{Fig}),
+%    they use the same counter to number the floats, etc.
+%
+%    Setting up a float type is done by declaring an instance of type
+%    \texttt{floattypesetup} and then executing it.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \DeclareFloatType#1#2{
+ \DeclareInstance{floattypesetup}{#1}{std}
+   { type-id = #1,  #2 }
+ \UseInstance{floattypesetup}{#1}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%    For each float type \texttt{TYPE} the following utility macros
+%    hold important static data.
+%
+% \DescribeMacro{\g_xor_type_TYPE_class_tl}
+%    The |\g_xor_type_TYPE_class_tl| holds the name of the float sequence
+%    class the float type |TYPE| belongs to. A sequence class contains
+%    all types which should be placed in order of their call-outs,
+%    e.g., if type ``figure'' and ``table'' are in the same sequence
+%    class a table whose call-out is later than that of a figure will
+%    not be placed before it. If on the other hand these types are in
+%    different sequence classes such reordering will be undertaken by
+%    the placement algorithm if feasible.
+%
+%
+% \DescribeMacro\g_xor_type_TYPE_extension_tl
+%    The |\g_xor_type_TYPE_extension_tl| holds the file extension to which
+%    caption information for this type is written, e.g., |lot| for
+%    tables, or |lof| for figures. If there is the desire to produce
+%    combined listing one can use the same extension for different
+%    float types.\footnote{This functionality can alternatively be
+%    provided by putting all captions into a single external file and
+%    then ignore certain entries when reading the data back, so it
+%    might vanish again.}
+%
+%
+% \DescribeMacro{\g_xor_type_TYPE_allowed_areas_tl}
+%    The |\g_xor_type_TYPE_allowed_areas_tl| holds the default float areas in which this float
+%    type is allowed to go. By default this is the full list of all
+%    known areas. By restricting it to a subset of areas it is
+%    possible to provide special placement arrangements, e.g., tables
+%    always at the bottom only.
+%
+%
+% \DescribeMacro{\g_xor_type_TYPE_caption_tl}
+%    The |\g_xor_type_TYPE_caption_tl| holds the fixed caption text which is
+%    displayed together with the caption number, e.g., |Figure|,
+%    etc. This is passed to the caption formatting instances.
+%
+%
+% \DescribeMacro{\g_xor_type_TYPE_counter_tl}
+%    The |\g_xor_type_TYPE_counter_tl| holds the name of the counter to use for
+%    numbering the floats of type |TYPE|. It is possible that
+%    different types share the same counter, i.e., are numbered as a
+%    single sequence. However in that case one should probably ensure
+%    that the types belong to a single float sequence class since
+%    otherwise the numbers within the document might get out of
+%    sequence. On the other hand it is not required to have floats in
+%    the same sequence class share a counter; they can be numbered
+%    independently without problems.
+%
+% \DescribeMacro{\g_xor_type_TYPE_body_tl}
+%    The |\g_xor_type_TYPE_body_tl| holds the formatting instructions that should be
+%    applied to the body of each float of type |TYPE|.
+%
+%    \begin{macrocode}
+\DeclareObjectType{floattypesetup}{0}
+
+\DeclareTemplateInterface{floattypesetup}{std}{0}{
+   type-id            : tokenlist   ,
+   sequence-class-id  : tokenlist   ,
+   toc-extension      : tokenlist   ,
+   default-area-list  : tokenlist   ,
+   caption-text       : tokenlist   ,
+   numbered-boolean   : boolean     = true  ,
+   numbered-id        : tokenlist   ,
+   numbered-within-id : tokenlist   ,
+   numbered-action    : function 0  ,
+   body-decls         : function 0  ,
+ }
+
+\cs_new:Npn \floattypesetup_body_decls: {}
+\cs_new:Npn \floattypesetup_numbered_action: {}
+
+\tl_new:N \l_floattypesetup_numbered_within_id_tl
+\tl_new:N \l_floattypesetup_numbered_id_tl
+\tl_new:N \l_floattypesetup_caption_text_tl
+\tl_new:N \l_floattypesetup_toc_ext_tl
+\tl_new:N \l_floattypesetup_class_id_tl
+\tl_new:N \l_floattypesetup_id_tl
+
+\DeclareTemplateCode{floattypesetup}{std}{0}{
+   type-id            =  \l_floattypesetup_id_tl,
+   sequence-class-id  =  \l_floattypesetup_class_id_tl,
+   toc-extension      =  \l_floattypesetup_toc_ext_tl,
+   default-area-list  =  \l_floattypesetup_area_clist,
+   caption-text       =  \l_floattypesetup_caption_text_tl,
+   numbered-boolean   =  \l_tmpa_bool,
+   numbered-id        =  \l_floattypesetup_numbered_id_tl,
+   numbered-within-id =  \l_floattypesetup_numbered_within_id_tl,
+   numbered-action    = \floattypesetup_numbered_action:,
+   body-decls         = \floattypesetup_body_decls:,
+ }
+ {
+%    \end{macrocode}
+%    Setting up defaults is done (at least in parts) in two steps:
+%    first we set certain key commands to |\relax| then we run
+%    |\AssignTemplateKeys| and then check if they are still
+%    |\relax|. If so we set the commands that we really want to
+%    set. This is necessary because several of them have names that
+%    contain the float type as part of the name and this type name is
+%    one of the keys.
+%    \begin{macrocode}
+    \TP_unset_key:N \l_floattypesetup_class_id_tl 
+    \TP_unset_key:N \l_floattypesetup_numbered_id_tl
+    \TP_unset_key:N \floattypesetup_numbered_action:
+    \TP_unset_key:N \floattypesetup_body_decls:
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+    \clist_clear:N \l_floattypesetup_area_clist 
+%    \end{macrocode}
+%    Default for the fixed caption text is empty.
+%    \begin{macrocode}
+    \tl_clear:N \l_floattypesetup_caption_text_tl
+%    \end{macrocode}
+%    By default we don't run the float counter within another
+%    counter. We use |\c_empty_tl| to denote this since this is also what
+%    would be returned from |numbered-within-id=,| which might be
+%    specified by a user.
+%    \begin{macrocode}
+    \tl_clear:N \l_floattypesetup_numbered_within_id_tl
+%    \end{macrocode}
+%    Everything goes by default to the |.toc| file (which isn't too
+%    bad if the extended \texttt{xcontents} package is used).
+%    \begin{macrocode}
+    \tl_set:Nn \l_floattypesetup_toc_ext_tl {toc}  % everything in here by default
+%    \end{macrocode}
+%    Now we are ready to look at the designer specifications:
+%    \begin{macrocode}
+   \AssignTemplateKeys
+%    \end{macrocode}
+%    Now for the second step: evaluate what we have: If the
+%    |sequence-class-id| is not set up, we try to default it to the
+%    |type-id|:
+%    \begin{macrocode}
+    \if_TP_key_unset:NT \l_floattypesetup_class_id_tl
+    {
+      \tl_set_eq:NN \l_floattypesetup_class_id_tl \l_floattypesetup_id_tl
+    }
+%    \end{macrocode}
+%    Float numbers are only set up if requested (which is the default).
+%    \begin{macrocode}
+    \if_meaning:w \c_true_bool \l_tmpa_bool 
+%    \end{macrocode}
+%    If the |numbered-id| is not set up, we try to default it to
+%    the |type-id|:\footnote{This needs fixing since part of the float
+%    handling assumes there is some counter to step etc. FIX!}
+%    \begin{macrocode}
+      \if_TP_key_unset:NT \l_floattypesetup_numbered_id_tl
+        {
+         \tl_set_eq:NN \l_floattypesetup_numbered_id_tl 
+                        \l_floattypesetup_id_tl
+        }
+%    \end{macrocode}
+%    Set up the new counter, if it already exists skip this part:
+%    \begin{macrocode}
+      \cs_if_free:cT {c@\l_floattypesetup_numbered_id_tl}
+      {
+        \tl_if_empty:NTF \l_floattypesetup_numbered_within_id_tl
+        {
+          \newcounter\l_floattypesetup_numbered_id_tl
+        }
+        {
+          \newcounter\l_floattypesetup_numbered_id_tl
+                    [\l_floattypesetup_numbered_within_id_tl]
+        }
+%    \end{macrocode}
+%    The default display for the float number is ``arabic'', we
+%    overwrite this only if requested:
+%    \begin{macrocode}
+        \if_TP_key_unset:NF \floattypesetup_numbered_action:
+        {
+          \cs_gset_eq:cN {the\l_floattypesetup_numbered_id_tl}
+                   \floattypesetup_numbered_action:
+        }
+      }
+    \fi:
+%    \end{macrocode}
+%
+%    Low-level environment declaration (allows overwriting since
+%    figure etc already exists)\footnote{Handle better?}
+%    \begin{macrocode}
+    \cs_gset_nopar:cpx {\l_floattypesetup_id_tl}
+          {\exp_not:N\@float{\l_floattypesetup_id_tl}}
+    \cs_gset_eq:cN {end\l_floattypesetup_id_tl} \end@float
+%    \end{macrocode}
+%    The remaining bits of the code set up the data structures that
+%    belong to each float type by linking the macro name containing
+%    the type in its name (i.e., |\l_floattypesetup_id_tl|) to the
+%    corresponding key macro. They are otherwise straight forward
+%    |\cs_set_eq:NN|s.
+%
+%    First for |\g_xor_type_|\meta{type}|_class_tl|:
+%    \begin{macrocode}
+    \tl_gset_eq:cN
+      {g_xor_type_ \l_floattypesetup_id_tl _class_tl}
+      \l_floattypesetup_class_id_tl
+%    \end{macrocode}
+%    Then |\g_xor_type_TYPE_extension_tl|:
+%    \begin{macrocode}
+    \tl_gset_eq:cN {g_xor_type_ \l_floattypesetup_id_tl 
+                     _extension_tl}
+                    \l_floattypesetup_toc_ext_tl
+%    \end{macrocode}
+%    Then |\g_xor_type_|\meta{type}|_allowed_areas_tl|:
+%
+%    The areas which should be tried for the current type are by
+%    default all areas, i.e., |\g_xor_areas_known_clist|; we have to
+%    defer that to the beginning of the document since further areas
+%    might become known.
+%    to allow this list to grow afterwards.
+%    \begin{macrocode}
+    \clist_if_empty:NTF \l_floattypesetup_area_clist
+    {
+      \cs_set_nopar:Npx \@tempa{
+      \exp_not:N\AtBeginDocument{
+        \exp_not:N \clist_gset_eq:cN
+          {g_xor_type_ \l_floattypesetup_id_tl _allowed_areas_tl}
+          \exp_not:N \g_xor_areas_known_clist
+%    \end{macrocode}
+%    currently we misuse the old 2e|\fps@TYPE| interface so above is
+%     really not that useful and we also have to set up:\footnote{FIX}
+%    \begin{macrocode}
+        \exp_not:N \tl_gset_eq:cN
+          {fps@ \l_floattypesetup_id_tl}
+          \exp_not:N \g_xor_areas_known_clist
+        }
+      }
+      \@tempa
+    }
+    {
+      \clist_gset_eq:cN
+          {g_xor_type_ \l_floattypesetup_id_tl 
+           _allowed_areas_tl}
+          \l_floattypesetup_area_clist
+      \clist_gset_eq:cN
+          {fps@ \l_floattypesetup_id_tl} 
+          \l_floattypesetup_area_clist
+    }
+%    \end{macrocode}
+%    Then |\g_xor_type_TYPE_caption_tl|:
+%    \begin{macrocode}
+    \tl_gset_eq:cN {g_xor_type_ \l_floattypesetup_id_tl
+                     _caption_tl}
+                     \l_floattypesetup_caption_text_tl
+%    \end{macrocode}
+%    Then |\g_xor_type_TYPE_counter_tl|:
+%    \begin{macrocode}
+    \tl_gset_eq:cN {g_xor_type_ \l_floattypesetup_id_tl
+                     _counter_tl}
+                    \l_floattypesetup_numbered_id_tl
+%    \end{macrocode}
+%    Then |\g_xor_type_TYPE_body_tl|:
+%    \begin{macrocode}
+    \tl_gset_eq:cN {g_xor_type_ \l_floattypesetup_id_tl
+                     _body_tl}
+                    \floattypesetup_body_decls:
+  }
+%    \end{macrocode}
+%
+%
+%
+% \begin{macro}{\DeclareFloatSequenceClass}
+%    A float sequence class is a list of float types for which the
+%    placement algorithm should preserve call-out order even between
+%    objects with different float type.
+%
+%    For each class we need a corresponding ``mark'' (needed by the
+%    algorithm) and we need to record the class name in an |\@elt|
+%    list.
+%
+%    Perhaps this declaration should be implicitly handled by
+%    |\DeclareFloatType|. It would mean a bit more work for the latter
+%    but less declarations in the document design!\footnote{Change one
+%    day!}
+%    \begin{macrocode}
+\cs_new_nopar:Npn \DeclareFloatSequenceClass#1{
+%    \end{macrocode}
+%    We probably have to check if that class is already
+%    declared since in that case we have to leave out a couple of
+%    actions. We assume that this is the case if a mark class is
+%    already defined for it.\footnote{Issue: Do it properly!}
+%    \begin{macrocode}
+  \cs_if_free:cTF{mark_#1}
+    {
+     \marks_new:n {#1}
+%    \end{macrocode}
+%    Add this to the list of known classes.
+%    \begin{macrocode}
+     \seq_gput_right:Nn \g_xor_float_classes_seq{#1}
+    }
+    \ErrorAlreadyDefined
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\g_xor_float_classes_seq}
+%    The list of float classes known in the system.
+%    \begin{macrocode}
+\seq_new:N \g_xor_float_classes_seq
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \begin{macro}{\c@figure}
+% \begin{macro}{\c@table}
+%    Throw away good registers\ldots this is only for testing to allow
+%    us using the OR together with classes like article that sets up
+%    figure and table already\footnote{Clean up!}
+%    \begin{macrocode}
+\cs_if_free:cF{c@figure}
+{
+  \cs_undefine:N \c@figure % thus new counter will be defined
+  \cs_undefine:N \c@table
+}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+%
+%
+%
+%
+%
+%
+%
+% \subsection{Float Placement Control Files}
+%
+% Code in this section is pretty old and so far only with minimal conversion
+% to expl3 syntax. Most of it needs a complete rewrite at a later stage.
+%
+% \begin{macro}{\xor_perhaps_write_placements_to_fpl_file:}
+%    |\xor_perhaps_write_placements_to_fpl_file:| writes all float
+%    placements (except for ``here'' floats) into the |fpl| in case we
+%    are writing to this file.
+%
+%    By default, don't write fpl files.
+%    \begin{macrocode}
+\cs_new_eq:NN \xor_perhaps_write_placements_to_fpl_file: \prg_do_nothing:
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\xor_perhaps_write_to_fpl_file:n}
+%    |\xor_perhaps_write_to_fpl_file:n| writes its first argument to the
+%    |fpl| in case we are writing to it.
+%
+%    By default, don't write fpl files.
+%    \begin{macrocode}
+\cs_new_eq:NN \xor_perhaps_write_to_fpl_file:n \use_none:n
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\xor_gen_float_placement_fpl_info:nnnnnnn}
+%    The format for a Float: line in an |fpl| file.  Only the sequence
+%    number (|#7|) is currently used, the rest just helps a human
+%    reader identify the float.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \xor_gen_float_placement_fpl_info:nnnnnnn#1#2#3#4#5#6#7{
+  \@spaces\@spaces Float:~#7~(#6~#4)~[#3]^^J}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\savefloatplacements}
+% Declaration to turn on writing of FPL files.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \savefloatplacements{
+  \newwrite\fpl@file
+  \immediate\openout\fpl@file\jobname.fpl
+  \cs_set_nopar:Npn \xor_perhaps_write_to_fpl_file:n{
+     \immediate\write\fpl@file
+     }
+  \cs_set_nopar:Npn \xor_perhaps_write_placements_to_fpl_file:{
+    \xor_perhaps_write_to_fpl_file:n{
+    ^^JPage:~~
+      \int_use:N \g_xor_page_absolute_int \space (\the\c@page)}
+    \xor_perhaps_write_to_fpl_file:n{
+      \@spaces Style:~~ \g_xor_used_pagestyle_tl }
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+    \xor_forall_areas:n
+    {
+      \xor_perhaps_write_to_fpl_file:n{\@spaces Area:~ \curr@area \space - }
+      \seq_map_inline:cn {g_xor_area_ \curr@area _float_seq}
+      {
+        \xor_perhaps_write_to_fpl_file:n
+        { \exp_after:wN
+          \xor_gen_float_placement_fpl_info:nnnnnnn
+          \the\toks########1
+        }% yes, all these are needed.
+      }
+    }
+  }
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+% \begin{macro}{\readfloatplacements}
+% Similar declaration to read FPC files. The file is read at this
+%  point up to the first Page: line. and the output routine command
+% |\xor_trial_place_float_loop:| is redefined to read the FPC info for each page.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \readfloatplacements{
+  \newread\fpc@file
+  \openin\fpc@file\jobname.fpc\scan_stop:
+  \ifeof\fpc@file
+    \PackageWarningNoLine{xor}
+        {No~\jobname.fpc:~using~automatic~float~placement}
+  \else:
+    \cs_set_eq:NN \xor_maybe_get_fpc_page_data: \xor_get_fpc_line_and_recurse:
+    \xor_maybe_get_fpc_page_data:
+
+% fix next line
+
+    \cs_gset_eq:NN \xor_try_float_pages: \prg_do_nothing:
+
+%    \end{macrocode}
+%    Next line should go once we implement moving floats in and out of
+%    ``here'' as then we need to read the file at a different
+%    place!\footnote{Reimplement!}
+%    \begin{macrocode}
+    \cs_gset_eq:NN \xor_trial_place_float_loop: \xor_fpc_place_float_loop:
+  \fi:
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\xor_fpc_place_float_loop:}
+%    Version of |\xor_trial_place_float_loop:| to use with float placement
+%    control file.  Should be moved to xo-or once it works.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \xor_fpc_place_float_loop:{
+%<*trace>
+  \trace_push:n{xor_fpc_place_float_loop:}
+%</trace>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+   \xor_get_fpc_line_and_recurse:
+%    \end{macrocode}
+%    Adding the floats changes the column heights but the values in
+%    |\g_xor_best_trial_col_hts_tl| are not updated by this process so when
+%    finally typesetting the pages we would retrieve the wrong values. So we
+%    either have to update this tl var.~or (what is currently done) clear it
+%    totally. The latter is probably okay as we haven't done trials and we are
+%    not backing up so \ldots{} cross fingers and \ldots
+%
+%    Eventually this need to change once we allow partially set up fpc
+%    files.\footnote{Check/fix!}
+%    \begin{macrocode}
+   \tl_gclear:N \g_xor_best_trial_col_hts_tl
+%    \end{macrocode}
+%
+%    Do we have to set |\if_xor_trial_with_floats:|?\footnote{Check!}
+%    \begin{macrocode}
+  \marks_OR_restore_state:nn 
+    {
+%<*trace>
+     \trace:n{copying~ g_xor_hold_page_box~ onto~ MVL}
+%</trace>
+     \vbox_unpack:N \g_xor_hold_page_box
+     \xor_add_badly_guarded_penalty:N \c_xor_output_collect_penalty
+    }
+    \xor_OR_best_cols_setup:
+%<*trace>
+  \trace_pop:n{xor_fpc_place_float_loop:}
+%</trace>
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\g_xor_next_fpc_page_int}
+% The next page for which there is FPC data. Initial value has to be
+% a number to |\ifnum|.
+%    \begin{macrocode}
+\int_new:N \g_xor_next_fpc_page_int
+\int_gset:Nn \g_xor_next_fpc_page_int {-1}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\xor_maybe_get_fpc_page_data:}
+%
+%    \begin{macrocode}
+\cs_new_eq:NN \xor_maybe_get_fpc_page_data: \prg_do_nothing:
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\xor_get_fpc_line_and_recurse:}
+%    Get one line of data from an FPC file, calls itself recursively so the
+%    effect of a call is to get all the lines for the current page up to and
+%    including the Page: line for the next page for which there is data.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \xor_get_fpc_line_and_recurse:{
+%<*trace>
+\trace_push:n{xor_get_fpc_line_and_recurse:}
+%</trace>
+  \cs_set_eq:NN \xor_fpc_next_task: \prg_do_nothing:
+  \int_compare:nNnTF \g_xor_next_fpc_page_int > \g_xor_page_absolute_int
+  {
+%<*trace>
+    \trace:n{FPC:~No~ float~ control~ on~ page:~ \int_use:N \g_xor_page_absolute_int}
+%</trace>
+  }
+  {
+    \tex_ifeof:D\fpc@file
+%<*trace>
+      \trace:n{FPC:~ fpc~ file~ended}
+%</trace>
+      \int_gset_eq:NN \g_xor_next_fpc_page_int \c_max_int
+
+      \cs_gset_eq:NN \xor_trial_place_float_loop: \xor_trial_place_float_loop_std:
+      \cs_gset_eq:NN \xor_try_float_pages:        \xor_try_float_pages_std:
+
+    \else:
+      \group_begin:
+        \tex_endlinechar:D `\ %
+        \tex_catcode:D`\ 10\scan_stop:
+        \tex_global:D\read\fpc@file~to~\g_tmpa_tl
+      \group_end:
+      \cs_set_eq:NN \xor_fpc_next_task:\xor_maybe_get_fpc_page_data:
+%<*trace>
+    \trace:n{FPC:~ fpc~ line~ read:~ \g_tmpa_tl}
+%</trace>
+      \tl_if_eq:NNF \g_tmpa_tl \c_empty_tl
+      {
+        \exp_after:wN \xor_parse_fpc_line:w \g_tmpa_tl \scan_stop:
+      }
+    \fi:
+  }
+%<*trace>
+  \trace_pop:n{xor_get_fpc_line_and_recurse:}
+%</trace>
+  \xor_fpc_next_task:
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\xor_parse_fpc_line:w}
+%    If float control files are being read,
+%    Read the section of the fpc file for this page
+%    and directly assign floats to the specified areas
+%    with no trials or checks.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \xor_parse_fpc_line:w #1#2~#3~#4 \scan_stop:{
+  \if_meaning:w P#1
+%<*trace>
+    \trace:n{FPC:~ Next~page~control:~#3}
+%</trace>
+    \int_gset:Nn \g_xor_next_fpc_page_int {#3}
+    \cs_set_eq:NN \xor_fpc_next_task: \prg_do_nothing:
+  \else:
+    \if_meaning:w S#1
+%<*trace>
+      \trace:n{FPC:~ Style:~#3}
+%</trace>
+      \tl_gset:Nn \g_xor_fpc_pagestyle_tl {#3}
+      \cs_set_eq:NN \xor_fpc_next_task:\xor_maybe_get_fpc_page_data:
+    \else:
+    \if_meaning:w A#1
+%<*trace>
+      \trace:n{FPC:~ Area:~#3}
+%</trace>
+      \xor_this_area_setup:o{#3}
+      \cs_set_eq:NN \xor_fpc_next_task:\xor_maybe_get_fpc_page_data:
+    \else:
+      \if_meaning:w F#1
+        \if_meaning:w \g_xor_this_area_name_tl\c_fpc_here_area_name_tl
+%    \end{macrocode}
+%    Should allow moving floats into and out of here status means
+%    reading before the collection OR, not after.\footnote{FIX, update,
+%    extend --- whatever you want to call it.}
+%    \begin{macrocode}
+%<*trace>
+          \trace:n{FPC:~ here~float}
+%</trace>
+        \else:
+%<*trace>
+          \trace:n{FPC:~ not~here~float}
+%</trace>
+          \xor_fpc_find_and_remove_float_from_active:n {#3}
+%    \end{macrocode}
+%    If a float number is specified and there is not a float of that
+%    number in the active list, something has gone wrong, either we
+%    haven't reached the float yet (possible if the new arrangement
+%    results in the callout being on a later page than specified) or
+%    we have already assigned this float (which is a bug, either in
+%    this code, or in the fpc file.) Currently this condition is not
+%    handled other than by |\ERROR|. If the float is found, assign it
+%    to the current area (as set by an Area: line in the fpc file.
+%    \begin{macrocode}
+          \tl_if_eq:NNTF
+             \g_xor_floats_active_seq \g_xor_floats_active_new_seq
+           {
+%<*trace>
+            \trace:n{FPC:~ Float:~#3~not~found}
+%</trace>
+            \cs_set_nopar:Npx \fpc@list{\fpc@list#3,\g_xor_this_area_name_tl\scan_stop:}
+            \cs_show:N \fpc@list
+           }
+           {
+%<*trace>
+            \trace:n{FPC:~ Float:~#3~is~\g_xor_this_float_box_tl}
+%</trace>
+            \seq_gset_eq:NN \g_xor_floats_active_seq \g_xor_floats_active_new_seq
+%    \end{macrocode}
+%    Before we add the float, let's do some sanity checks. We allow to
+%    place a float into an area which is bigger than the float (spans
+%    more columns) but we complain if the area is smaller.
+%    \begin{macrocode}
+            \int_compare:nNnT \g_xor_this_area_span_tl <
+                              \g_xor_this_span_num_tl
+              {
+               \PackageError{xo}
+                {Float~ bigger~ than~ target~ area}
+                {Float~\int_use:N \g_xor_this_flseq_int\space spans ~
+                  \g_xor_this_span_num_tl\space columns,~
+                  but~ target~ area~ \g_xor_this_area_name_tl\space
+                  spans~ only~ \g_xor_this_area_span_tl\space
+                  columns.\MessageBreak
+                  Correct~ the~ data~ in~ file~ \jobname.fpc!
+                }
+              }
+%    \end{macrocode}
+%    We also check if the target area is allowed on the current page
+%    (it could be the case that the page setup for that page doesn't
+%    list it in its |area-list| key!
+%    \begin{macrocode}
+            \clist_if_in:NoTF
+                \g_xor_areas_used_clist
+                \g_xor_this_area_name_tl
+              {}
+              {
+                \PackageError{xo}
+                  {Target~ area~ not~ available~ on~ current~ page}
+                  {Float~ \int_use:N \g_xor_this_flseq_int\space was~ requested~ to~
+                    be~ placed~ into~ area~ \g_xor_this_area_name_tl,\MessageBreak
+                    but~ this~
+                    area~ is~ not~ available~ on~ page~ \thepage.
+                    \MessageBreak
+                    Correct~ the~ data~ in~ file~ \jobname.fpc!
+                  }
+%    \end{macrocode}
+%    If we can't put it into the requested area we have to put it
+%    somewhere else. Otherwise a lot of code might break. So we simply
+%    chose the first area in |\g_xor_areas_used_clist|\footnote{Need a solution if
+%    the page doesn't allow ``any'' floats! FIX!}
+%    \begin{macrocode}
+              \clist_if_empty:NTF \g_xor_areas_used_clist    % we have a problem
+                \RESOLVE
+                { \clist_get:NN\g_xor_areas_used_clist\l_tmpa_tl
+                  \xor_this_area_setup:o\l_tmpa_tl
+                }
+            }
+%    \end{macrocode}
+%    Typeset and attach the caption and adjust the text size for the
+%    current column.
+%    \begin{macrocode}
+            \xor_append_caption_to_float:
+            \xor_construct_and_test_col_hts:
+            \bool_if:NT \g_test_bool
+                \ERRORFloatAreaToLarge
+%    \end{macrocode}
+%    We append the float to the area after the above column updates,
+%    otherwise |\xor_construct_and_test_col_hts:| would incorrectly think
+%    there is already a float present even if we add the first float
+%    to an area.
+%    \begin{macrocode}
+%% big ?
+%%            \seq_gput_right:No
+%%                \g_xor_float_free_seq \g_xor_this_float_box_tl
+
+%            \seq_gput_right:co
+%                {g_xor_area_ \g_xor_this_area_name_tl _float_seq}
+%                \g_xor_this_float_box_tl
+\xor_update_float_placement_data:
+          }
+        \fi:
+%    \end{macrocode}
+%
+%    Loop to next line.
+%    \begin{macrocode}
+        \cs_set_eq:NN \xor_fpc_next_task: \xor_maybe_get_fpc_page_data:
+%    \end{macrocode}
+%    end of case on type of fpc line.
+%    \begin{macrocode}
+      \fi:
+    \fi:
+    \fi:
+  \fi:
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%    \begin{macrocode}
+\cs_new_nopar:Npn \xor_fpc_find_and_remove_float_from_active:n #1 {
+   \group_begin:
+    \seq_gclear:N \g_xor_floats_active_new_seq
+
+    \cs_gset_eq:NN \g_xor_this_float_box_tl \scan_stop:
+ 
+    \seq_map_inline:Nn \g_xor_floats_active_seq
+	 {
+	  \int_compare:nNnTF
+	     {\exp_after:wN\get@float@number\tex_the:D\toks ##1} = {#1}
+             {
+              \tl_gset:Nn \g_xor_curr_float_box_tl ##1
+              \xor_extract_this_float_values:N ##1
+             }
+             { \seq_gput_right:Nn \g_xor_floats_active_new_seq ##1 }
+         }
+   \group_end:
+}
+\seq_new:N \g_xor_floats_active_new_seq
+%    \end{macrocode}
+
+%
+%
+% \begin{macro}{\c_fpc_here_area_name_tl}
+%
+%    \begin{macrocode}
+\tl_const:Nn \c_fpc_here_area_name_tl {hhh}
+%    \end{macrocode}
+% \end{macro}
+
+% \begin{macro}{\fpc@list}
+%
+%    \begin{macrocode}
+\cs_set_nopar:Npn \fpc@list{\relax}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\get@float@number}
+% 
+%    \begin{macrocode}
+\cs_new_nopar:Npn \get@float@number#1#2#3#4#5#6#7{#7}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+
+%  \begin{macro}{\enddocument}
+%    If we are setting floats via FPC files then it might happen that we
+%    delete a float from the file by mistake rather than moving it. In that
+%    case it will remain on the active list and never gets typeset unless
+%    later in the document norming float placement trials are resumed.
+%
+%    To account for this situation (at least initially) we check that this
+%    sequence is empty when we are ready to finally end the document. We don't
+%    make it an error right now but probably it has to be one day.
+%
+%    \begin{macrocode}
+\cs_set_nopar:Npn \enddocument{%
+   \cs_set_eq:NN \AtEndDocument \@firstofone
+   \@enddocumenthook
+   \@checkend{document}%
+   \clearpage
+
+    \seq_if_empty:NF \g_xor_floats_active_seq
+       {
+        \typeout{Warning:~ the~ following~ float(s)~ have~ not~
+                 been~ typeset:}
+        \seq_map_inline:Nn \g_xor_floats_active_seq
+           { \typeout{\@spaces ##1} }
+       }
+
+   \begingroup
+     \if@filesw
+       \immediate\closeout\@mainaux
+       \cs_set_eq:NN \@setckpt\@gobbletwo
+       \cs_set_eq:NN \@newl@bel\@testdef
+       \@tempswafalse
+       \makeatletter \input\jobname.aux
+     \fi
+     \@dofilelist
+     \ifdim \font@submax >\fontsubfuzz\relax
+       \@font@warning{Size substitutions with differences\MessageBreak
+                  up to \font@submax\space have occurred.\@gobbletwo}%
+     \fi
+     \@defaultsubs
+     \@refundefined
+     \if@filesw
+       \ifx \@multiplelabels \relax
+         \if@tempswa
+           \@latex@warning@no@line{Label(s)~ may~ have~ changed.~
+               Rerun~ to~ get~ cross-references~ right}%
+         \fi
+       \else
+         \@multiplelabels
+       \fi
+     \fi
+   \endgroup
+   \deadcycles\z@\@@end}
+%    \end{macrocode}
+%  \end{macro}
+
+
+%
+%
+% \endinput
+\endinput
+%

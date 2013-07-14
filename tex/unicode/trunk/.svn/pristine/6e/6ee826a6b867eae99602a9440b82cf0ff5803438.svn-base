@@ -1,0 +1,238 @@
+This is a generated file for the LaTeX (2e + expl3) validation system.
+Don't change this file in any respect.
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+Author: Joseph Wright
+============================================================
+TEST 1: .code:n basics
+============================================================
+Defining \key var > module/key-one.default on line ...
+Defining \key var > module/key-one.req on line ...
+"value"
+""
+""
+New version "value two"
+============================================================
+============================================================
+TEST 2: .default:n and variants
+============================================================
+"value"
+""
+"foo"
+"value"
+""
+"123"
+"value"
+""
+"abc"
+"value"
+""
+"xyz"
+============================================================
+============================================================
+TEST 3: .initial:n and variants
+============================================================
+> \l_tmpa_tl=macro:
+->foo.
+<recently read> }
+l.164   }
+> \l_tmpa_tl=macro:
+->value.
+<recently read> }
+l.164   }
+> \l_tmpa_tl=macro:
+->bar.
+<recently read> }
+l.164   }
+> \l_tmpa_tl=macro:
+->value.
+<recently read> }
+l.164   }
+> \l_tmpa_tl=macro:
+->123.
+<recently read> }
+l.164   }
+> \l_tmpa_tl=macro:
+->value.
+<recently read> }
+l.164   }
+> \l_tmpa_tl=macro:
+->abc.
+<recently read> }
+l.164   }
+> \l_tmpa_tl=macro:
+->value.
+<recently read> }
+l.164   }
+> \l_tmpa_tl=macro:
+->xyz.
+<recently read> }
+l.164   }
+> \l_tmpa_tl=macro:
+->value.
+<recently read> }
+l.164   }
+============================================================
+============================================================
+TEST 4: .meta:n
+============================================================
+Defining \key var > module/key-two.default on line ...
+Defining \key var > module/key-two.req on line ...
+"value-one"
+"value-two"
+============================================================
+============================================================
+TEST 5: .meta:nn
+============================================================
+Defining \key var > module-two/key-one.default on line ...
+Defining \key var > module-two/key-one.req on line ...
+"value-one"
+============================================================
+============================================================
+TEST 6: .value_required: and .value_forbidden:
+============================================================
+"value"
+""
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/value-required"
+! 
+! The key 'module/key-one' requires a value.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.218   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The key 'module/key-one' must have a value.
+| No value was present: the key will be ignored.
+|...............................................
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/value-forbidden"
+! 
+! The key 'module/key-two' does not taken a value.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.218   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The key 'module/key-two' should be given without a value.
+| LaTeX will ignore the given value 'value'.
+|...............................................
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/value-forbidden"
+! 
+! The key 'module/key-two' does not taken a value.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.218   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The key 'module/key-two' should be given without a value.
+| LaTeX will ignore the given value ''.
+|...............................................
+Hello
+============================================================
+============================================================
+TEST 7: Unknown keys
+============================================================
+"value"
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/key-unknown"
+! 
+! The key 'module/key-two' is unknown and is being ignored.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.242   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The module 'module' does not have a key called module/key-two'.
+| Check that you have spelled the key name correctly.
+|...............................................
+Defining \key var > module/unknown.default on line ...
+Defining \key var > module/unknown.req on line ...
+"value"
+I saw "value"
+============================================================
+============================================================
+TEST 8: Unknown properties, etc.
+============================================================
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/property-unknown"
+! 
+! The key property '.foobar' is unknown.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.252   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| This is a coding error.
+| 
+| LaTeX has been asked to set the property '.foobar' for key 'module/key-one':
+| this property is not defined.
+|...............................................
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/property-requires-value"
+! 
+! The property '.code:n' requires a value.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.252   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| This is a coding error.
+| 
+| LaTeX was asked to set property '.code:n' for key 'module/key-two'.
+| No value was given for the property, and one is required.
+|...............................................
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/key-no-property"
+! 
+! No property given in definition of key 'key-three'.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.252   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| This is a coding error.
+| 
+| Inside \keys_define:nn each key name needs a property:
+| 
+|     key-three.<property>
+| 
+| LaTeX did not find a '.' to indicate the start of a property.
+|...............................................
+============================================================

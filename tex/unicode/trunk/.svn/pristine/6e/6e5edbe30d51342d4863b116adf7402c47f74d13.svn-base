@@ -1,0 +1,135 @@
+This is a generated file for the LaTeX (2e + expl3) validation system.
+Don't change this file in any respect.
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+Author: Will Robertson \& Joseph Wright
+============================================================
+TEST 1: new
+============================================================
+Defining \l_a_prop on line ...
+Defining \g_b_prop on line ...
+The property list \l_a_prop is empty
+> .
+<recently read> }
+l.27   }
+The property list \g_b_prop is empty
+> .
+<recently read> }
+l.27   }
+============================================================
+============================================================
+TEST 2: clear
+============================================================
+The property list \l_a_prop contains the pairs (without outer braces):
+>  {tmp}  =>  {test l\par }.
+<recently read> }
+l.45   }
+The property list \g_b_prop contains the pairs (without outer braces):
+>  {tmp}  =>  {test g\par }.
+<recently read> }
+l.45   }
+The property list \l_a_prop is empty
+> .
+<recently read> }
+l.45   }
+The property list \g_b_prop is empty
+> .
+<recently read> }
+l.45   }
+The property list \l_a_prop contains the pairs (without outer braces):
+>  {tmp}  =>  {test l\par }.
+<recently read> }
+l.45   }
+The property list \g_b_prop is empty
+> .
+<recently read> }
+l.45   }
+============================================================
+============================================================
+TEST 3: clear_new
+============================================================
+The property list \l_a_prop contains the pairs (without outer braces):
+>  {tmp}  =>  {test l\par }.
+<recently read> }
+l.71   }
+The property list \g_b_prop contains the pairs (without outer braces):
+>  {tmp}  =>  {test g\par }.
+<recently read> }
+l.71   }
+Defining \l_cc_prop on line ...
+Defining \g_dd_prop on line ...
+The property list \l_a_prop is empty
+> .
+<recently read> }
+l.71   }
+The property list \g_b_prop is empty
+> .
+<recently read> }
+l.71   }
+The property list \l_cc_prop is empty
+> .
+<recently read> }
+l.71   }
+The property list \g_dd_prop is empty
+> .
+<recently read> }
+l.71   }
+The property list \l_a_prop contains the pairs (without outer braces):
+>  {tmp}  =>  {test l\par }.
+<recently read> }
+l.71   }
+The property list \g_b_prop is empty
+> .
+<recently read> }
+l.71   }
+The property list \l_cc_prop is empty
+> .
+<recently read> }
+l.71   }
+The property list \g_dd_prop contains the pairs (without outer braces):
+>  {}  =>  {dd}.
+<recently read> }
+l.71   }
+============================================================
+============================================================
+TEST 4: set_eq
+============================================================
+The property list \l_a_prop is empty
+> .
+<recently read> }
+l.94   }
+The property list \g_b_prop contains the pairs (without outer braces):
+>  {test}  =>  {test b\par }.
+<recently read> }
+l.94   }
+The property list \l_a_prop contains the pairs (without outer braces):
+>  {test}  =>  {test b\par }.
+<recently read> }
+l.94   }
+The property list \g_d_prop contains the pairs (without outer braces):
+>  {test}  =>  {test b\par }.
+<recently read> }
+l.94   }
+The property list \l_a_prop is empty
+> .
+<recently read> }
+l.94   }
+The property list \g_d_prop contains the pairs (without outer braces):
+>  {test}  =>  {test b\par }.
+<recently read> }
+l.94   }
+============================================================

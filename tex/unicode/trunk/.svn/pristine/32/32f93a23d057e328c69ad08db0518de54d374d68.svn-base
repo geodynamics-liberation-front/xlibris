@@ -1,0 +1,286 @@
+% \iffalse meta-comment
+%
+%% File: tl-act.dtx Copyright (C) 2011 The LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3c of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the "l3trial bundle" (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/svnroot/experimental/trunk/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX3 Project.
+%%
+%% -----------------------------------------------------------------------
+%
+%<*driver|package>
+\RequirePackage{expl3}
+\GetIdInfo$Id$
+  {L3 Experimental Actions on Token Lists}
+%</driver|package>
+%<*driver>
+\documentclass[full]{l3doc}
+\usepackage{amsmath}
+ %\usepackage{tl-act}
+\begin{document}
+  \DocInput{\jobname.dtx}
+\end{document}
+%</driver>
+% \fi
+%
+%
+% \title{^^A
+%   The \textsf{tl-act} package: actions on token lists^^A
+%   \thanks{This file describes v\ExplFileVersion,
+%     last revised \ExplFileDate.}^^A
+% }
+%
+% \author{^^A
+%  The \LaTeX3 Project\thanks
+%    {^^A
+%      E-mail:
+%        \href{mailto:latex-team@latex-project.org}
+%          {latex-team@latex-project.org}^^A
+%    }^^A
+% }
+%
+% \date{Released \ExplFileDate}
+%
+% \maketitle
+%
+% \begin{documentation}
+%
+%   This module builds upon the experimental \cs{@@_act:NNNnn},
+%   and provides some extra functionalities to manipulate
+%   token lists expandably on a token by token basis.
+%
+%   \begin{function}[EXP]{\tl_act_expand:n}
+%     \begin{syntax}
+%       \cs{tl_act_expand:n} \Arg{token list}
+%     \end{syntax}
+%     After two steps of expansion, yields a fully expanded
+%     \meta{token list}, as in the case of \texttt{x}-type arguments.
+%     Caveats:
+%     \begin{itemize}
+%     \item catcode 1 and 2 characters must be balanced at each step
+%       of the expansion. It requires some care when we do brace tricks
+%       elsewhere in \LaTeX3. See for instance a small change I made in
+%       \cs{group_align_safe_begin:}, but I think that every expandable
+%       function we now have is safe in this respect.
+%     \item catcode 1 and 2 characters are automatically converted
+%       to |{| and |}| (in charcode) when the corresponding group
+%       \enquote{reaches the start} of the token list.
+%     \item Furthermore, the expansion of such a group must remain within
+%       the \enquote{bounds} of that group. But this is basically the
+%       same as the first condition, and all of the \LaTeX3 functions
+%       fit the bill.
+%     \end{itemize}
+%     It doesn't seem like too extreme conditions to
+%   \end{function}
+%
+% \end{documentation}
+%
+% \begin{implementation}
+%
+% \section{\pkg{tl-act} implementation}
+%
+%    \begin{macrocode}
+%<*package>
+%    \end{macrocode}
+%    
+%    \begin{macrocode}
+%<@@=tl>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\ProvidesExplPackage
+  {\ExplFileName}{\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+%    \end{macrocode}
+%
+% \begin{macro}{\tl_act_expand:n}
+%   As usual, feed \cs{@@_act:NNNnn} three functions, an empty
+%   parameter text, and the \meta{tokens} to expand.
+%    \begin{macrocode}
+\cs_new:Npn \tl_act_expand:n
+  {
+    \tex_romannumeral:D
+    \@@_act:NNNnn
+      \tl_act_expand_normal:nN
+      \tl_act_expand_group:nn
+      \tl_act_expand_space:n
+      { }
+  }
+%    \end{macrocode}
+%   Spaces are simply output. Groups need to be recursed in.
+%    \begin{macrocode}
+\cs_new:Npn \tl_act_expand_space:n #1
+  { \tl_act_output:n {~} }
+\cs_new:Npn \tl_act_expand_group:nn #1
+  {
+    \tl_act_group_recurse:Nnn
+      \tl_act_output:n
+      { \tl_act_expand:n }
+  }
+%    \end{macrocode}
+%   The case of a normal token requires more testing. If it does not
+%   expand in \texttt{x}-type arguments, then it should not expand here either,
+%   and we can simply output it as it is. Otherwise, we need to detect
+%   the primitives \cs{unexpanded}, \cs{noexpand} and \cs{the}, which
+%   have a somewhat special role in expansion contexts.
+%    \begin{macrocode}
+\cs_new:Npn \tl_act_expand_normal:nN #1 #2
+  {
+    \token_if_expands_in_x:NTF #2
+      {
+        \str_case_x:nnn { \token_to_meaning:N #2 }
+          {
+            { \token_to_str:N \noexpand } { \tl_act_expand_noexpand:w }
+            { \token_to_str:N \unexpanded } { \tl_act_expand_unexpanded:w }
+            { \token_to_str:N \the } { \tl_act_expand_the:w }
+          }
+          { \use_i:nn { \exp_after:wN \tl_act_loop:w #2 } }
+      }
+      { \tl_act_output:n {#2} }
+  }
+%    \end{macrocode}
+%   In the case of \cs{noexpand}, look ahead. If it is either a space
+%   or a group, then we can simply forget \cs{noexpand} as it has no effect.
+%   Otherwise, output the next token, and loop.
+%    \begin{macrocode}
+\cs_new:Npn \tl_act_expand_noexpand:w \tl_act_loop:w #1 \q_tl_act_stop
+  {
+    \tl_if_head_is_N_type:nTF {#1}
+      { \tl_act_expand_noexpand_head:N }
+      { \tl_act_loop:w }
+    #1 \q_tl_act_stop
+  }
+\cs_new:Npn \tl_act_expand_noexpand_head:N #1
+  {
+    \tl_act_output:n {#1}
+    \tl_act_loop:w
+  }
+%    \end{macrocode}
+%   To implement \cs{unexpanded}, we need to be able to
+%   detect and ignore what the \TeX{}book calls \meta{filler}:
+%   any set of spaces and relax tokens. Then grab a
+%   \meta{general text} and output it, then loop. Since one
+%   of our assumptions is that the token list is balanced
+%   at all times, we don't have to support ^^A|{|
+%   \cs{unexpanded} \cs{c_group_begin_token}\ldots|}|.
+%    \begin{macrocode}
+\cs_new:Npn \tl_act_expand_unexpanded:w \tl_act_loop:w
+  {
+    \exp_after:wN \tl_act_expand_unexpanded_aux:n
+    \tex_romannumeral:D \tl_act_expand_filler:w
+  }
+\cs_new:Npn \tl_act_expand_unexpanded_aux:n #1
+  {
+    \tl_act_output:n {#1}
+    \tl_act_loop:w
+  }
+%    \end{macrocode}
+%   \meta{Fillers} are not yet expanded properly.
+%    \begin{macrocode}
+\cs_new:Npn \tl_act_expand_filler:w { -`0 }
+% \cs_new:Npn \tl_act_expand_filler:w
+%   {
+%     \exp_after:wN \tl_act_expand_filler_aux:w
+%     \tex_romannumeral:D -`0
+%   }
+% \cs_new:Npn \tl_act_expand_filler_aux:w #1 \q_tl_act_stop
+%   {
+%     \tl_if_head_normal:nTF {#1}
+%       { \tl_act_expand_filler_aux_ii:N }
+%       {
+%         \tl_if_head_begin_group:nTF {#1}
+%           { \c_zero }
+%           {
+%             \exp_after:wN \tl_act_expand_filler:w
+%             \tex_romannumeral:D -`0
+%           }
+%       }
+%     #1 \q_tl_act_stop
+%   }
+% \cs_new:Npn \tl_act_expand_filler_aux_ii:N #1
+%   {
+%     \token_if_eq_meaning:NNTF #1 \tex_relax:D
+%       { \exp_after:wN \tl_act_expand_filler:w \use_none:n }
+%       {
+%         \exp_after:wN \if_meaning:w \exp_not:N #1 #1
+%         ...
+%         \token_if_eq_catcode:NNTF #1 \c_space_token
+%           { \exp_after:wN \tl_act_expand_filler:w \use_none:n }
+%           { \c_zero }
+%       }
+%   }
+%    \end{macrocode}
+% For \cs{the}, things are harder: it can act on one token or on
+% more than one token. However, in most cases, there is no need
+% to worry about expansion, and we can simply expand \cs{the}.
+% The only cases where preventing further expansion is important
+% is for toks registers, and toks parameters. The most troublesome
+% case is the \cs{toks} primitive itself, because it needs to
+% look ahead for a register number, and that can take very many forms.
+%    \begin{macrocode}
+\cs_new:Npn \tl_act_expand_the:w #1 \q_tl_act_stop
+  {
+    \__msg_expandable_error:n {Not~Implemented~Yet!~Sorry.}
+    \tl_act_end:w
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[pTF]{\token_if_expands_in_x:N}
+%   This is true for expandable non-protected commands.
+%    \begin{macrocode}
+\cs_set:Npn \cs_tmp:w #1
+  {
+    \prg_new_conditional:Npnn \token_if_expands_in_x:N ##1 { TF }
+      {
+        \exp_after:wN \if_meaning:w \exp_not:N ##1 ##1
+          \prg_return_false:
+        \else:
+          \str_if_eq_x:nnTF
+            { \token_to_str:N \X }
+            {
+              \exp_after:wN \token_if_expands_in_x_aux:w
+              \token_to_meaning:N ##1 #1 \q_stop
+              X
+            }
+            \prg_return_false:
+            \prg_return_true:
+        \fi:
+      }
+    \cs_new:Npn \token_if_expands_in_x_aux:w ##1 #1 ##2 \q_stop {##1}
+  }
+\exp_args:No \cs_tmp:w { \tl_to_str:n { protected } }
+%    \end{macrocode}
+% \end{macro}
+%
+%    \begin{macrocode}
+%</package>
+%    \end{macrocode}
+%
+% \end{implementation}
+%
+% \PrintIndex

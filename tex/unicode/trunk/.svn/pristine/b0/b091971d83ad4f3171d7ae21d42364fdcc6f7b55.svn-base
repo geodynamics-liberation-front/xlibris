@@ -1,0 +1,221 @@
+% \iffalse
+%% File xhj-test.tex
+%% (C) Copyright 2000-2011 Frank Mittelbach, LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3b of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the ``galley bundle'' (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/cgi-bin/cvsweb.cgi/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX Project Team.
+%%
+%% -----------------------------------------------------------------------
+%%
+% \fi
+%
+
+%\documentclass[check-declarations]{article}
+\documentclass{article}
+
+\setlength\textwidth{5cm}
+
+\usepackage{expl3}
+\usepackage{xparse,xhj,galley2}
+\tracinggalleys=2  % want tracing here
+
+
+\def\trace{\tracingassigns=1\tracingall}
+
+\ExplSyntaxOn
+\makeatletter
+
+% simple definition for \\
+% ignoring * form
+%
+\RenewDocumentCommand\\{so}
+  {\leavevmode \tex_unskip:D
+   \nobreak% Needed!
+   \skip_horizontal:n {\l_GAL_linefill_skip}
+   \IfNoValueF{#2}{\tex_vadjust:D{\skip_vertical:n{#2}}}\break
+  }
+% but we also have to redefine \@normalcr to point to the internal
+% form when \@parboxrestore is called.
+\cs_set_eq:Nc \@normalcr {\token_to_str:N\\}
+
+\ExplSyntaxOff
+\makeatother
+
+\setlength\parindent{12pt}
+
+\begin{document}
+
+some starting text
+
+%\trace
+\UseInstance{pshape}{staggered}
+
+\section{This should\\ be\\
+         a really staggered\\heading (but isn't)}
+
+In fact we should not be surprised since the standard \LaTeX{} heading
+code is essentially using its own pshape and thus overwriting the
+outer pshape declaration.
+
+\UseInstance{pshape}{staggered}
+\UseInstance{justification}{raggedright}
+This is a paragraph for testing various justification\\ settings. We have some
+text and after the word `word' \\ we just had a forced line break. We
+do some more line break testing, e.g., this\\[7pt] one was supposed to
+add 7pts of extra space.
+
+
+And here a paragraph for comparison with some text some text some text
+also-containing-a-longer-word some text some text some text some text
+some text some text some text.
+
+\section{Linebreaks}
+
+
+A line break with linebreak\linebreak
+and now ...
+
+% A line break with oldlinebreak\oldlinebreak
+% what takes longer?
+
+
+\section{Justified}
+
+%\trace
+some text\marginpar{\UseInstance{justification}{raggedright}\fussy
+       \fontfamily{pop}\fontsize{7}{9}\selectfont ZZZ Some text in
+       optima. Some text in optima. Some text in optima. Some text in
+       optima. Some text in optima.}
+some text some text some text some text some text some text some text
+some text some text some text some text some text some text
+some text some text some text some text some text some text some text
+some text some text some text some text some text some text
+some text some text some text some text some text some text some text
+some text some text some text some text some text some text
+
+%\trace
+
+\section{Raggedright}
+
+\UseInstance{justification}{raggedright}
+This is a paragraph for testing various justification settings. We have some
+text and after the word `word' \\ we just had a forced line break. We
+do some more line break testing, e.g., this\\[7pt] one was supposed to
+add 7pts of extra space.
+
+
+And here a paragraph for comparison with some text some text some text
+also-containing-a-longer-word some text some text some text some text
+some text some text some text.
+
+\section{Left}
+
+\UseInstance{justification}{raggedleft}
+\UseInstance{hyphenation}{off}\sloppy
+This is a paragraph for testing various justification settings. We have some
+text and after the word `word' \\ we just had a forced line break. We
+do some more line break testing, e.g., this\\[7pt] one was supposed to
+add 7pts of extra space.
+
+
+
+And here a paragraph for comparison with some text some text some text
+also-containing-a-longer-word some text some text some text some text
+some text some text some text.
+
+\tracingpages=1
+
+\section{Adjust}
+
+\UseInstance{justification}{adjust}
+\UseInstance{hyphenation}{on}\fussy
+This is a paragraph for testing various justification settings. We have some
+text and after the word `word' \\ we just had a forced line break. We
+do some more line break testing, e.g., this\\[7pt] one was supposed to
+add 7pts of extra space.
+
+
+And here a paragraph for comparison with some text some text some text
+also-containing-a-longer-word some text some text some text some text
+some text some text some text.
+
+\section{Center}
+
+\UseInstance{justification}{center}
+This is a paragraph for testing various justification settings. We have some
+text and after the word `word' \\ we just had a forced line break. We
+do some more line break testing, e.g., this\\[7pt] one was supposed to
+add 7pts of extra space.
+
+
+And here a paragraph for comparison with some text some text some text
+also-containing-a-longer-word some text some text some text some text
+some text some text some text.
+
+\section{Center first}
+
+\UseInstance{justification}{centerfirst-adjust}
+This is a paragraph for testing various justification settings. We have some
+This is a paragraph for testing various justification settings. We have some
+This is a paragraph for testing various justification settings. We have some
+This is a paragraph for testing various justification settings. We have some
+text and after the word `word' \\ we just had a forced line break. We
+do some more line break testing, e.g., this\\[7pt] one was supposed to
+add 7pts of extra space.
+This is a paragraph for testing various justification settings. We have some
+This is a paragraph for testing various justification settings. We have some
+This is a paragraph for testing various justification settings. We have some
+This is a paragraph for testing various justification settings. We have some
+
+
+And here a paragraph for comparison with some text some text some text
+also-containing-a-longer-word some text some text some text some text
+some text some text some text.
+
+
+\section{Center middle}
+
+\hrule
+
+\UseInstance{justification}{centermiddle}
+
+This is a paragraph for testing various justification settings. We have some
+text and after the word `word' \\ we just had a forced line break. We
+do some more line break testing, e.g., this\\[7pt] one was supposed to
+add 7pts of extra space.
+
+
+And here a paragraph for comparison with some text some text some text
+also-containing-a-longer-word some text some text some text some text
+some text some text some text.
+
+\hrule
+
+\end{document}
+

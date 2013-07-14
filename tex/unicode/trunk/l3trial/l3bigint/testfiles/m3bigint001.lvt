@@ -1,0 +1,301 @@
+%
+% Copyright (C) 2012-2013 The LaTeX3 Project
+%
+
+\documentclass{minimal}
+
+\input{regression-test}
+
+\RequirePackage[check-declarations,log-functions]{expl3}
+\RequirePackage{l3bigint}
+
+
+% Everything before this is ignored by the test system.
+\START
+
+\AUTHOR{Bruno Le Floch}
+
+
+% don't display stuff from executing \begin{document}
+\OMIT
+\begin{document}
+\TIMO
+
+\ExplSyntaxOn
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% allocating new bigints:
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\TEST { allocating~new~registers;~no~worries }
+  {
+    \bigint_new:N \l_testa_bigint
+    \bigint_new:N \g_testa_bigint
+    \bigint_new:N \g_testb_bigint
+  }
+
+\TEST { allocating~same~name:~errors~expected }
+  {
+    \bigint_new:N \l_testa_bigint        % define second time
+    \bigint_new:N \g_testa_bigint        % gives error
+  }
+
+\TEST { allocate~or~clear }
+  {
+    \OMIT
+      \bigint_set:Nn \l_testa_bigint { 10 }
+      \bigint_gset:Nn \g_testa_bigint { 10 }
+    \TIMO
+    \group_begin:
+      \bigint_zero_new:N \l_testa_bigint
+      \bigint_zero_new:N \l_testb_bigint
+      \bigint_gzero_new:N \g_testa_bigint
+      \bigint_gzero_new:N \g_testb_bigint
+      \TYPE { \bigint_use:N \l_testa_bigint }
+      \TYPE { \bigint_use:N \l_testb_bigint }
+      \TYPE { \bigint_use:N \g_testa_bigint }
+      \TYPE { \bigint_use:N \g_testb_bigint }
+    \group_end:
+    \TYPE { \bigint_use:N \l_testa_bigint }
+    \TYPE { \bigint_use:N \l_testb_bigint }
+    \TYPE { \bigint_use:N \g_testa_bigint }
+    \TYPE { \bigint_use:N \g_testb_bigint }
+  }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% incrementing + decrementing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\TEST{incrementing~and~decrementing:~expect~3,~-1}
+  {
+    \bigint_gincr:N \g_testa_bigint
+    \bigint_gincr:N \g_testa_bigint
+    \bigint_gincr:N \g_testa_bigint
+    \TYPE { \bigint_use:N  \g_testa_bigint }
+    \bigint_gzero:N \g_testa_bigint
+    \bigint_gdecr:N \g_testa_bigint
+    \TYPE { \bigint_use:N  \g_testa_bigint }
+  }
+
+\TEST { generating~overflow:~expect~2147483647,~-2147483648,~2147483647 }
+  {
+    \bigint_set:Nn \l_testa_bigint { \int_use:N \c_max_int }
+    \TYPE { \bigint_use:N \l_testa_bigint }
+    \bigint_incr:N \l_testa_bigint
+    \TYPE { \bigint_use:N \l_testa_bigint }
+    \bigint_decr:N \l_testa_bigint
+    \TYPE { \bigint_use:N \l_testa_bigint }
+  }
+
+\TEST { incrementing~and~decrementing:~expect~-2 }
+  {
+    \bigint_zero:N \l_testa_bigint
+    \bigint_decr:N \l_testa_bigint
+    \bigint_decr:N \l_testa_bigint
+    \TYPE { \bigint_use:N \l_testa_bigint }
+  }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% using invalid variables
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% \TEST { trying~invalid~variables:~expect~errors }
+%   {
+%     \bigint_decr:N \l_testb_bigint          % ok
+%     \cs_set_nopar:Npn \l_testb_bigint {} % causes bad error below
+%     \bigint_decr:N \l_testb_bigint
+%   }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% adding and substracting
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\TEST { adding~and~subtracting }
+  {
+    \bigint_zero:N \l_testa_bigint
+    \bigint_add:Nn \l_testa_bigint { 35 }
+    \bigint_add:Nn \l_testa_bigint { 15 }
+    \TYPE { \bigint_use:N \l_testa_bigint } % we hope for a value of 50
+    \bigint_sub:Nn \l_testa_bigint { 15 }
+    \TYPE { \bigint_use:N \l_testa_bigint } % we hope for a value of 35
+    \bigint_gzero:N \g_testa_bigint
+    {
+      \bigint_gadd:Nn \g_testa_bigint { 3 }
+      \bigint_gadd:Nn \g_testa_bigint { 3 }
+      \TYPE { \bigint_use:N \g_testa_bigint } % we hope for a value of 6
+      \bigint_gsub:Nn \g_testa_bigint { 25 }
+    }
+    \TYPE { \bigint_use:N \g_testa_bigint } % we hope for a value of -19
+  }
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% evaluating biginteger expressions
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\TESTEXP { comparing~big~integers }
+  {
+    \bigint_to_decimal:n { 505 } \space
+    \bigint_compare:nNnTF { 17 } < { 205 } \YES \NO         \space
+    \bigint_compare:nNnF  { 17 } < { 205 } \NO              \space
+    \bigint_compare:nNnTF { \g_testa_bigint } = { -19 } \YES \NO  \space
+    \bigint_compare:nNnT  { \g_testa_bigint } = { -19 } \YES      \space
+    \bigint_compare:nNnTF
+      { \bigint_max:nn { 1 } { 7 } }
+      = { \bigint_add:nn { \bigint_min:nn { 5 } { 8 } } { 2 } }
+      \YES \NO
+  }
+
+\TESTEXP { Case~statements }
+  {
+    \bigint_case:nnn
+      { -00000000 }
+      {
+        { -1 } { \NO }
+        { 0 } { \YES }
+      }
+    { \NO }
+  \NEWLINE
+  \bigint_case:nnn
+    { 0 }
+    {
+      {      0 }   { \YES }
+      { \ERROR } { \ERROR }
+    }
+    { \NO }
+  \NEWLINE
+  \bigint_case:nnn
+    { 2 }
+    { { ---2 } { \NO } }
+    { \YES }
+  }
+
+\TESTEXP { Addition~and~subtraction }
+  {
+    \bigint_add:nn { 1111111} { 2222222 } \NEWLINE % expect +3333333
+    \bigint_add:nn { 123456 } { 345 } \NEWLINE % expect +123801
+    \bigint_add:nn { -123456 } { 345 } \NEWLINE % expect -123111
+    \bigint_sub:nn { 1234 } { 2345678 } \NEWLINE % expect -2344444
+    \bigint_sub:nn { 1 } { -12345678901234567890 }
+    % +12345678901234567891
+  }
+
+\TESTEXP { Multiplication }
+  {
+    \bigint_mul:nn { 1 } { 1 } \NEWLINE
+    \bigint_mul:nn { 0 } { 1 } \NEWLINE
+    \bigint_mul:nn { 0 } { 3451627 } \NEWLINE
+    \bigint_mul:nn { -3451627 } { 0 } \NEWLINE
+    \bigint_mul:nn { -2 } { 3 } \NEWLINE
+    \bigint_mul:nn { -2 } { 7 } \NEWLINE
+    \bigint_mul:nn { -2126 } { 727 } \NEWLINE
+    \bigint_mul:nn { 12345678901234567890 } { 98765432109876543210 }
+  }
+
+\OMIT
+\cs_new:Npn \test:nn #1#2
+  {
+    #2 * \bigint_div_round:nn {#1} {#2} ~ approx ~
+    #2 * \bigint_div_truncate:nn {#1} {#2} ~ + ~
+    \bigint_mod:nn {#1} {#2} ~ = ~ #1 \NEWLINE
+  }
+\TIMO
+
+\TESTEXP { Division~and~modulo }
+  {
+    \test:nn { 123 } { 4 }
+    \test:nn { 122 } { 4 }
+    \test:nn { 121 } { 4 }
+    \test:nn { 120 } { 4 }
+    \test:nn { -123 } { 4 }
+    \test:nn { -122 } { 4 }
+    \test:nn { -121 } { 4 }
+    \test:nn { -120 } { 4 }
+    \test:nn { 123 } { -4 }
+    \test:nn { 122 } { -4 }
+    \test:nn { 121 } { -4 }
+    \test:nn { 120 } { -4 }
+    \test:nn { -123 } { -4 }
+    \test:nn { -122 } { -4 }
+    \test:nn { -121 } { -4 }
+    \test:nn { -120 } { -4 }
+  }
+
+\TESTEXP { More~division~and~modulo }
+  {
+    \test:nn { 2062 } { 4123 }
+    \test:nn { 2062 } { -4123 }
+    \test:nn { -2062 } { 4123 }
+    \test:nn { -2062 } { -4123 }
+    \test:nn { 1 } { 4123 }
+    \test:nn { 1 } { -4123 }
+    \test:nn { -1 } { 4123 }
+    \test:nn { -1 } { -4123 }
+    \test:nn { 0 } { 4123 }
+    \test:nn { 0 } { -4123 }
+  }
+
+\TEST { Division~by~zero }
+  {
+    \TYPE { \bigint_div_round:nn { 1 } { 0 } }
+    \TYPE { \bigint_div_round:nn { 0 } { 0 } }
+    \TYPE { \bigint_div_round:nn { -1 } { 0 } }
+    \TYPE { \bigint_div_truncate:nn { 1 } { 0 } }
+    \TYPE { \bigint_div_truncate:nn { 0 } { 0 } }
+    \TYPE { \bigint_div_truncate:nn { -1 } { 0 } }
+    \TYPE { \bigint_mod:nn { 1 } { 0 } }
+    \TYPE { \bigint_mod:nn { 0 } { 0 } }
+    \TYPE { \bigint_mod:nn { -1 } { 0 } }
+  }
+
+\TESTEXP { Factor }
+  {
+    \bigint_factor:n { 1 } \NEWLINE
+    \bigint_factor:n { -1 } \NEWLINE
+    \bigint_factor:n { 1024 } \NEWLINE
+    \bigint_factor:n { 123456 } \NEWLINE
+    \bigint_factor:n { 2401726464 } \NEWLINE
+  }
+
+\TESTEXP { gcd ~ and ~ lcm }
+  {
+    \bigint_gcd:nn { 5 } { 0 } \NEWLINE
+    \bigint_gcd:nn { 180765 } { 173625 } \NEWLINE
+    \bigint_lcm:nn { 5 } { 0 } \NEWLINE
+    \bigint_lcm:nn { 180765 } { 173625 } \NEWLINE
+  }
+
+\OMIT
+\cs_set:Npn \test:n #1 { #1 : \bigint_count_divisors:n {#1} \NEWLINE }
+\TIMO
+
+\TESTEXP { count~divisors }
+  {
+    \int_step_function:nnnN { 0 } { 1 } { 30 } \test:n
+    \test:n {-1}
+    \test:n {-36}
+  }
+
+\TESTEXP { if_odd/even/int }
+  {
+    \bigint_if_odd:nTF {            0 } { \ERROR } { \FALSE } ~
+    \bigint_if_odd:nTF {            1 } { \TRUE  } { \ERROR } ~
+    \bigint_if_odd:nTF {     -9364723 } { \TRUE  } { \ERROR } ~
+    \bigint_if_odd:nTF { 172673893842 } { \ERROR } { \FALSE } ~
+    \NEWLINE
+    \bigint_if_even:nTF {            0 } { \TRUE  } { \ERROR } ~
+    \bigint_if_even:nTF {            1 } { \ERROR } { \FALSE } ~
+    \bigint_if_even:nTF {     -9364723 } { \ERROR } { \FALSE } ~
+    \bigint_if_even:nTF { 172673893842 } { \TRUE  } { \ERROR } ~
+    \NEWLINE
+    \bigint_if_int:nTF {            0 } { \TRUE  } { \ERROR } ~
+    \bigint_if_int:nTF {            1 } { \TRUE  } { \ERROR } ~
+    \bigint_if_int:nTF {     -9364723 } { \TRUE  } { \ERROR } ~
+    \bigint_if_int:nTF {   2147483647 } { \TRUE  } { \ERROR } ~
+    \bigint_if_int:nTF {  -2147483647 } { \TRUE  } { \ERROR } ~
+    \bigint_if_int:nTF {   2147483648 } { \ERROR } { \FALSE } ~
+    \bigint_if_int:nTF {  -2147483648 } { \ERROR } { \FALSE } ~
+    \bigint_if_int:nTF { 172673893842 } { \ERROR } { \FALSE } ~
+  }
+
+\END

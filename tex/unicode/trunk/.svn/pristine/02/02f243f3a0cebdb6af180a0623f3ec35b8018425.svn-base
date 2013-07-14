@@ -1,0 +1,254 @@
+% Copyright (C) 2013 The LaTeX3 Project
+
+
+\documentclass{minimal}
+\input{regression-test}
+
+\RequirePackage[check-declarations,log-functions]{expl3}
+
+
+\begin{document}
+\START
+\AUTHOR{Joseph Wright}
+\ExplSyntaxOn
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\TEST { .code:n~basics }
+  {
+    \keys_define:nn { module }
+      {
+        key-one .code:n = { \TYPE { "#1" } }
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+        key-one = , % Blank value
+        key-one   , % No value at all
+      }
+    \keys_define:nn { module }
+      {
+        key-one .code:n = { \TYPE { New~version~"#1" } }
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value~two ,
+      }
+  }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\TEST { .default:n~and~variants }
+  {
+    \keys_define:nn { module }
+      {
+        key-one .code:n    = { \TYPE { "#1" } } ,
+        key-one .default:n = { foo }
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+        key-one = , % Blank value
+        key-one   , % No value at all
+      }
+    \OMIT
+      \tl_set:Nn \l_tmpa_tl { 123 }
+    \TIMO
+    \keys_define:nn { module }
+      {
+        key-one .code:n    = { \TYPE { "#1" } } ,
+        key-one .default:V = \l_tmpa_tl
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+        key-one = , % Blank value
+        key-one   , % No value at all
+      }
+    \OMIT
+      \tl_set:Nn \l_tmpa_tl { abc }
+    \TIMO
+    \keys_define:nn { module }
+      {
+        key-one .code:n    = { \TYPE { "#1" } } ,
+        key-one .default:o = \l_tmpa_tl
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+        key-one = , % Blank value
+        key-one   , % No value at all
+      }
+    \OMIT
+      \tl_set:Nn \l_tmpa_tl { \l_tmpb_tl }
+      \tl_set:Nn \l_tmpb_tl { xyz }
+    \TIMO
+    \keys_define:nn { module }
+      {
+        key-one .code:n    = { \TYPE { "#1" } } ,
+        key-one .default:x = \l_tmpa_tl
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+        key-one = , % Blank value
+        key-one   , % No value at all
+      }
+  }
+  
+\TEST { .initial:n~and~~variants }
+  {
+    \keys_define:nn { module }
+      {
+        key-one .tl_set:N  = \l_tmpa_tl ,
+        key-one .initial:n = { foo }
+      }
+    \tl_show:N \l_tmpa_tl
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+      }
+    \tl_show:N \l_tmpa_tl
+    \keys_define:nn { module }
+      {
+        key-one .tl_set:N  = \l_tmpa_tl ,
+        key-one .initial:n = { bar }
+      }
+    \tl_show:N \l_tmpa_tl
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+      }
+    \tl_show:N \l_tmpa_tl
+    \OMIT
+      \tl_set:Nn \l_tmpb_tl { 123 }
+    \TIMO
+    \keys_define:nn { module }
+      {
+        key-one .tl_set:N  = \l_tmpa_tl ,
+        key-one .initial:V = \l_tmpb_tl
+      }
+    \tl_show:N \l_tmpa_tl
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+      }
+    \tl_show:N \l_tmpa_tl
+    \OMIT
+      \tl_set:Nn \l_tmpb_tl { abc }
+    \TIMO
+    \keys_define:nn { module }
+      {
+        key-one .tl_set:N  = \l_tmpa_tl ,
+        key-one .initial:o = \l_tmpb_tl
+      }
+    \tl_show:N \l_tmpa_tl
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+      }
+    \tl_show:N \l_tmpa_tl
+    \OMIT
+      \tl_set:Nn \l_tmpb_tl { \tl_tail:n { !xyz } }
+    \TIMO
+    \keys_define:nn { module }
+      {
+        key-one .tl_set:N  = \l_tmpa_tl ,
+        key-one .initial:x = \l_tmpb_tl
+      }
+    \tl_show:N \l_tmpa_tl
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+      }
+    \tl_show:N \l_tmpa_tl
+  }
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\TEST { .meta:n }
+  {
+    \keys_define:nn { module }
+      {
+        key-one .meta:n = { key-two = {#1} } ,
+        key-two .code:n = { \TYPE { " #1 " } } ,
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value-one ,
+        key-two = value-two ,
+      }
+  }
+  
+\TEST { .meta:nn }
+  {
+    \keys_define:nn { module }
+      {
+        key-one .meta:nn = { module-two } { key-one = {#1} } ,
+      }
+    \keys_define:nn { module-two }
+      {
+        key-one .code:n = { \TYPE { " #1 " } } ,
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value-one ,
+      }
+  }
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\TEST { .value_required:~and~.value_forbidden: }
+  {
+    \keys_define:nn { module }
+      {
+        key-one .code:n           = { \TYPE { "#1" } }  ,
+        key-one .value_required:                        ,
+        key-two .code:n           = { \TYPE { Hello } } ,
+        key-two .value_forbidden:
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+        key-one = , % Blank value
+        key-one   , % No value at all
+        key-two = value ,
+        key-two = , % Blank value
+        key-two   , % No value at all
+      }
+  }
+  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\TEST { Unknown~keys }
+  {
+    \keys_define:nn { module }
+      {
+        key-one .code:n = { \TYPE { "#1" } }
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+        key-two = value
+      }
+    \keys_define:nn { module }
+      {
+        unknown .code:n = { \TYPE { I~saw~"#1" } }
+      }
+    \keys_set:nn { module }
+      {
+        key-one = value ,
+        key-two = value
+      }
+  }
+  
+\TEST { Unknown~properties,~etc. }
+  {
+    \keys_define:nn { module }
+      {
+        key-one .foobar ,
+        key-two .code:n ,
+        key-three
+      }
+  }
+
+\END

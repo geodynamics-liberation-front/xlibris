@@ -1,0 +1,141 @@
+% \iffalse
+%
+%% File l3fp-extras.dtx (C) Copyright 2012 The LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3c of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the "l3trial bundle" (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/svnroot/experimental/trunk/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX Project Team.
+%%
+%% -----------------------------------------------------------------------
+%%
+%
+%<*driver|package>
+\RequirePackage{expl3}
+\GetIdInfo$Id: l3fp-extras.dtx 4173 2012-08-31 13:06:11Z bruno $
+  {L3 Experimental additions to l3fp}
+%</driver|package>
+%<*driver>
+\documentclass[full]{l3doc}
+\usepackage{amsmath}
+\begin{document}
+  \DocInput{\jobname.dtx}
+\end{document}
+%</driver>
+% \fi
+%
+% \title{^^A
+%   The \pkg{l3fp-extras} package\\ Add ons to \pkg{l3fp}^^A
+%   \thanks{This file describes v\ExplFileVersion,
+%      last revised \ExplFileDate.}^^A
+% }
+%
+% \author{^^A
+%  The \LaTeX3 Project\thanks
+%    {^^A
+%      E-mail:
+%        \href{mailto:latex-team@latex-project.org}
+%          {latex-team@latex-project.org}^^A
+%    }^^A
+% }
+%
+% \date{Released \ExplFileDate}
+%
+% \maketitle
+%
+% \begin{documentation}
+%
+% \section{\pkg{l3fp-extras} documentation}
+%
+% Additions to \pkg{l3fp}.
+%
+% \subsection{Symbolic expressions}
+%
+% The \pkg{l3fp-symbolic} package introduces support for variables.
+% \begin{quote}
+%   \cs{fp_new_var:n} |{ A }|
+%   \cs{fp_set_var:nn} |{ B }| |{ 1 * sin(A) + 3**2 }|
+%   \cs{fp_show:n} |{ B }|
+%   \cs{fp_set_var:nn} |{ A }| |{ pi/2 }|
+%   \cs{fp_show:n} |{ B }|
+%   \cs{fp_set_var:nn} |{ A }| |{ 0 }|
+%   \cs{fp_show:n} |{ B }|
+% \end{quote}
+% defines |A| to be a variable, then defines |B| to stand for
+% |1*sin(A)+9| (note that the operations that can be performed are
+% performed greedily, but the |1*| product is not simplified away).  The
+% value shown is |((1*sin(A))+9)|.  The next step defines |A| to be
+% equal to |pi/2|, and evaluating |B| then gives |10|.  We then redefine
+% |A| to be |0|: since |B| still stands for |1*sin(A)+9|, the value
+% shown is then~|9|.
+%
+% \begin{macro}{\fp_new_var:n}
+%   \begin{syntax}
+%     \cs{fp_new_var:n} \Arg{letters}
+%   \end{syntax}
+%   Declares the identifier \meta{letters} as a variable, which allows
+%   it to be used in floating point expressions.  For instance,
+%   \begin{quote}
+%     \cs{fp_new_var:n} |{ A }| \\
+%     \cs{fp_show:n} |{ A**2 - A + 1 }|
+%   \end{quote}
+%   shows |(((A^2)-A)+1)|.  If the declaration was missing, the parser
+%   would complain about an \enquote{\ttfamily Unknown fp word 'A'}.
+% \end{macro}
+%
+% \begin{macro}{\fp_gset_var:nn, \fp_set_var:nn}
+%   \begin{syntax}
+%     \cs{fp_set_var:nn} \Arg{letters} \Arg{fpexpr}
+%   \end{syntax}
+%   Defines the identifier \meta{letters} to stand for the result of
+%   evaluating the \meta{floating point expression} in any further
+%   expression.  The result may contain other variables (distinct from
+%   the identifier \meta{letters}).
+% \end{macro}
+%
+% \end{documentation}
+%
+% \begin{implementation}
+%
+% \section{\pkg{l3fp-extras} implementation}
+%
+%    \begin{macrocode}
+%<*package>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\ProvidesExplPackage
+  {\ExplFileName}{\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%</package>
+%    \end{macrocode}
+%
+% \end{implementation}
+%
+% \PrintIndex

@@ -1,0 +1,200 @@
+This is a generated file for the LaTeX (2e + expl3) validation system.
+Don't change this file in any respect.
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+Author: Frank Mittelbach, Bruno Le Floch
+Defining \c_a_tl on line ...
+Defining \c_b_tl on line ...
+Defining \c_aa_tl on line ...
+Defining \c_bb_tl on line ...
+Defining \c_aaa_tl on line ...
+Defining \c_bbb_tl on line ...
+Defining \foo:nn on line ...
+Defining \foo:oo on line ...
+Defining \foo:VV on line ...
+Defining \foo:xx on line ...
+Defining \foo:cc on line ...
+Defining \foo:nx on line ...
+Defining \exp_args:Nfx on line ...
+Defining \foo:fx on line ...
+Defining \exp_args:Nxf on line ...
+Defining \foo:xf on line ...
+Defining \bar:nnnnnn on line ...
+Defining \exp_args:NfvVonx on line ...
+Defining \bar:fvVonx on line ...
+============================================================
+TEST 1: protection
+============================================================
+macro:->\exp_args:Noo \foo:nn 
+macro:->\exp_args:NVV \foo:nn 
+\protected macro:->\exp_args:Nxx \foo:nn 
+macro:->\exp_args:Ncc \foo:nn 
+\protected macro:->\exp_args:Nnx \foo:nn 
+\protected macro:->\exp_args:Nfx \foo:nn 
+\protected macro:->\exp_args:Nxf \foo:nn 
+\protected macro:->\exp_args:NfvVonx \bar:nnnnnn 
+\protected macro:->\::f \::v \::V \::o \::n \::x \::: 
+============================================================
+============================================================
+TEST 2: expansion
+============================================================
+(a)(b)
+(\c_a_tl )(\c_b_tl )
+(\c_a_tl )(\c_b_tl )
+(\c_a_tl )(\c_b_tl )
+(A)(B)
+(\a )(\b )
+(a)(B)
+(A\c_a_tl )(BB)
+(AA)(B\c_b_tl )
+(A\c_a_tl )(\c_b_tl \c_b_tl )(\c_a_tl )(\c_b_tl )(\c_a_tl )(B)
+============================================================
+============================================================
+TEST 3: generate bad variants
+============================================================
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/command-not-defined"
+! 
+! Control sequence \undefined:nn undefined.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.73   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| This is a coding error.
+| 
+| LaTeX has been asked to use a command \undefined:nn, but this has not been
+| defined yet.
+|...............................................
+Defining \undefined:on on line ...
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/variant-too-long"
+! 
+! Variant form 'ooo' longer than base signature of '\undefined:nn'.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.73   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| This is a coding error.
+| 
+| LaTeX has been asked to create a variant of the function '\undefined:nn'
+| with a signature starting with 'ooo', but that is longer than the signature
+| (part after the colon) of '\undefined:nn'.
+|...............................................
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/invalid-variant"
+! 
+! Variant form 'x' invalid for base form '\undefined:on'.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.73   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| This is a coding error.
+| 
+| LaTeX has been asked to create a variant of the function '\undefined:on'
+| with a signature starting with 'x', but cannot change an argument from type
+| 'o' to type 'x'.
+|...............................................
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/missing-colon"
+! 
+! Function '\aa' contains no ':'.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.73   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| This is a coding error.
+| 
+| Code-level functions must contain ':' to separate the argument specification
+| from the function name. This is needed when defining conditionals or
+| variants, or when building a parameter text from the number of arguments of
+| the function.
+|...............................................
+macro:->\exp_args:No \undefined:nn 
+undefined
+undefined
+undefined
+============================================================
+============================================================
+TEST 4: Issue 101: protected variants for non-expandable primitives
+============================================================
+Defining \my_def:Npn on line ...
+Defining \my_def:cpn on line ...
+\protected macro:->\exp_args:Nc \my_def:Npn 
+============================================================
+============================================================
+TEST 5: Issue 102: macros expanding to \protected 
+============================================================
+Defining \foo:n on line ...
+Defining \foo:o on line ...
+macro:->\exp_args:No \foo:n 
+============================================================
+============================================================
+TEST 6: Detect \protected with unusual \escapechar 
+============================================================
+Defining /bar:n on line ...
+Defining /bar:o on line ...
+/protected macro:->/exp_args:No /bar:n 
+============================================================
+============================================================
+TEST 7: Issue 103: is the variant list a clist?
+============================================================
+Defining \bar:f on line ...
+Variant \bar:n already defined; not changing it on line ...
+Defining \bar:x on line ...
+\protected macro:->\exp_args:Nx \bar:n 
+============================================================
+============================================================
+TEST 8: What if the base function has no colon?
+============================================================
+Defining \foo on line ...
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "kernel/missing-colon"
+! 
+! Function '\foo' contains no ':'.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.108   }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| This is a coding error.
+| 
+| Code-level functions must contain ':' to separate the argument specification
+| from the function name. This is needed when defining conditionals or
+| variants, or when building a parameter text from the number of arguments of
+| the function.
+|...............................................
+undefined
+============================================================

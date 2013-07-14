@@ -1,0 +1,447 @@
+This is a generated file for the LaTeX (2e + expl3) validation system.
+Don't change this file in any respect.
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+Author: Will Robertson
+============================================================
+TEST 1: creation
+============================================================
+Defining \l_a_seq on line ...
+Defining \g_b_seq on line ...
+TRUE
+TRUE
+macro:->
+macro:->
+============================================================
+============================================================
+TEST 2: clearing
+============================================================
+macro:->
+macro:->\__seq_item:n {test a}
+macro:->
+============================================================
+undefined
+undefined
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "check/non-declared-variable"
+! 
+! The variable \l_undefined_seq has not been declared on line ....
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.50 }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| Checking is active, and you have tried do so something like:
+|   \tl_set:Nn \l_undefined_seq { ... }
+| without first having:
+|   \tl_new:N \l_undefined_seq
+| 
+| LaTeX will create the variable and continue.
+|...............................................
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "check/non-declared-variable"
+! 
+! The variable \g_undefined_seq has not been declared on line ....
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.50 }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| Checking is active, and you have tried do so something like:
+|   \tl_set:Nn \g_undefined_seq { ... }
+| without first having:
+|   \tl_new:N \g_undefined_seq
+| 
+| LaTeX will create the variable and continue.
+|...............................................
+macro:->
+macro:->
+undefined
+macro:->
+============================================================
+============================================================
+TEST 3: clear_new
+============================================================
+Defining \l_c_seq on line ...
+Defining \g_d_seq on line ...
+macro:->
+macro:->
+macro:->\__seq_item:n {test a}
+macro:->
+macro:->
+macro:->
+============================================================
+============================================================
+TEST 4: (g)set_eq
+============================================================
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "check/non-declared-variable"
+! 
+! The variable \l_e_seq has not been declared on line ....
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.94 }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| Checking is active, and you have tried do so something like:
+|   \tl_set:Nn \l_e_seq { ... }
+| without first having:
+|   \tl_new:N \l_e_seq
+| 
+| LaTeX will create the variable and continue.
+|...............................................
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "check/non-declared-variable"
+! 
+! The variable \g_f_seq has not been declared on line ....
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.94 }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| Checking is active, and you have tried do so something like:
+|   \tl_set:Nn \g_f_seq { ... }
+| without first having:
+|   \tl_new:N \g_f_seq
+| 
+| LaTeX will create the variable and continue.
+|...............................................
+macro:->\__seq_item:n {abc}
+macro:->\__seq_item:n {abc}
+macro:->\__seq_item:n {abc}
+============================================================
+macro:->\__seq_item:n {abc}
+undefined
+macro:->
+============================================================
+macro:->\__seq_item:n {abc}
+macro:->\__seq_item:n {abc}
+macro:->\__seq_item:n {abc}
+============================================================
+============================================================
+TEST 5: gconcat
+============================================================
+macro:->\__seq_item:n {abc}\__seq_item:n {def}\__seq_item:n {uvw}\__seq_item:n 
+{xyz}
+============================================================
+macro:->\__seq_item:n {ABC}\__seq_item:n {DEF}\__seq_item:n {UVW}\__seq_item:n 
+{XYZ}
+============================================================
+============================================================
+TEST 6: put left
+============================================================
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "check/non-declared-variable"
+! 
+! The variable \l_tmpc_tl has not been declared on line ....
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.135 }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| Checking is active, and you have tried do so something like:
+|   \tl_set:Nn \l_tmpc_tl { ... }
+| without first having:
+|   \tl_new:N \l_tmpc_tl
+| 
+| LaTeX will create the variable and continue.
+|...............................................
+The sequence \l_tmpa_seq contains the items (without outer braces):
+>  {\l_tmpc_tl \par }
+>  {\ERROR B\par }
+>  {FULL EXPANSION\par }
+>  {\l_tmpb_tl \par }
+>  {\ERROR A\par }.
+<recently read> }
+l.135 }
+============================================================
+============================================================
+TEST 7: put right
+============================================================
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "check/non-declared-variable"
+! 
+! The variable \l_tmpc_tl has not been declared on line ....
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.148 }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| Checking is active, and you have tried do so something like:
+|   \tl_set:Nn \l_tmpc_tl { ... }
+| without first having:
+|   \tl_new:N \l_tmpc_tl
+| 
+| LaTeX will create the variable and continue.
+|...............................................
+The sequence \l_tmpa_seq contains the items (without outer braces):
+>  {\ERROR A\par }
+>  {\l_tmpb_tl \par }
+>  {FULL EXPANSION\par }
+>  {\ERROR B\par }
+>  {\l_tmpc_tl \par }.
+<recently read> }
+l.148 }
+============================================================
+============================================================
+TEST 8: gput left
+============================================================
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "check/non-declared-variable"
+! 
+! The variable \l_tmpc_tl has not been declared on line ....
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.163 }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| Checking is active, and you have tried do so something like:
+|   \tl_set:Nn \l_tmpc_tl { ... }
+| without first having:
+|   \tl_new:N \l_tmpc_tl
+| 
+| LaTeX will create the variable and continue.
+|...............................................
+The sequence \g_b_seq contains the items (without outer braces):
+>  {\l_tmpc_tl \par }
+>  {\ERROR B\par }
+>  {FULL EXPANSION\par }
+>  {\l_tmpb_tl \par }
+>  {\ERROR A\par }.
+<recently read> }
+l.163 }
+============================================================
+============================================================
+TEST 9: gput right
+============================================================
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "check/non-declared-variable"
+! 
+! The variable \l_tmpc_tl has not been declared on line ....
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.178 }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| Checking is active, and you have tried do so something like:
+|   \tl_set:Nn \l_tmpc_tl { ... }
+| without first having:
+|   \tl_new:N \l_tmpc_tl
+| 
+| LaTeX will create the variable and continue.
+|...............................................
+The sequence \g_b_seq contains the items (without outer braces):
+>  {\ERROR A\par }
+>  {\l_tmpb_tl \par }
+>  {FULL EXPANSION\par }
+>  {\ERROR B\par }
+>  {\l_tmpc_tl \par }.
+<recently read> }
+l.178 }
+============================================================
+============================================================
+TEST 10: seq_if_empty (expect Y/N/N)
+============================================================
+YES
+NO
+NO
+============================================================
+============================================================
+TEST 11: seq_get
+============================================================
+> \l_tmpa_tl=macro:
+->\q_no_value .
+<recently read> }
+l.217 }
+> \l_tmpa_tl=macro:
+->.
+<recently read> }
+l.217 }
+> \l_tmpa_tl=macro:
+->a\par .
+<recently read> }
+l.217 }
+> \l_tmpa_tl=macro:
+->.
+<recently read> }
+l.217 }
+> \l_tmpa_tl=macro:
+->b\par .
+<recently read> }
+l.217 }
+============================================================
+============================================================
+TEST 12: push (same as put_left)
+============================================================
+The sequence \l_tmpa_seq contains the items (without outer braces):
+>  {\ERROR C\par }
+>  {\ERROR B\par }
+>  {\ERROR A\par }.
+<recently read> }
+l.228 }
+============================================================
+============================================================
+TEST 13: gpush (same as gput_left)
+============================================================
+The sequence \g_b_seq contains the items (without outer braces):
+>  {\ERROR B}
+>  {\ERROR C\par }
+>  {\ERROR B\par }
+>  {\ERROR A\par }.
+<recently read> }
+l.240 }
+============================================================
+============================================================
+TEST 14: top (same as get)
+============================================================
+============================================================
+============================================================
+TEST 15: if_in (expect 2 first false)
+============================================================
+FALSE
+FALSE
+TRUE
+TRUE
+TRUE
+TRUE
+TRUE
+============================================================
+============================================================
+TEST 16: if_in (T)
+============================================================
+TRUE
+TRUE
+TRUE
+TRUE
+TRUE
+============================================================
+============================================================
+TEST 17: if_in (F)
+============================================================
+FALSE
+FALSE
+============================================================
+============================================================
+TEST 18: map_inline
+============================================================
+c
+b\par 
+a
+c
+b\par 
+a
+============================================================
+============================================================
+TEST 19: map
+============================================================
+c
+b\par 
+a
+c
+b\par 
+a
+============================================================
+============================================================
+TEST 20: map_variable
+============================================================
+c
+b\par 
+a
+c
+b\par 
+a
+============================================================
+============================================================
+TEST 21: pop
+============================================================
+c
+The sequence \l_tmpa_seq contains the items (without outer braces):
+>  {b\par }
+>  {a}.
+<recently read> }
+l.327 }
+b\par 
+The sequence \l_tmpa_seq contains the items (without outer braces):
+>  {a}.
+<recently read> }
+l.327 }
+a
+The sequence \l_tmpa_seq is empty
+> .
+<recently read> }
+l.327 }
+============================================================
+\q_no_value 
+The sequence \l_tmpa_seq is empty
+> .
+<recently read> }
+l.327 }
+============================================================
+============================================================
+TEST 22: gpop
+============================================================
+local->c.
+global->.
+The sequence \g_tmpb_seq contains the items (without outer braces):
+>  {b\par }
+>  {a}.
+<recently read> }
+l.358 }
+local->b\par .
+global->.
+The sequence \g_tmpb_seq contains the items (without outer braces):
+>  {a}.
+<recently read> }
+l.358 }
+local->a.
+global->.
+The sequence \g_tmpb_seq is empty
+> .
+<recently read> }
+l.358 }
+============================================================
+local->\q_no_value .
+global->.
+The sequence \g_tmpb_seq is empty
+> .
+<recently read> }
+l.358 }
+============================================================

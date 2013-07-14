@@ -1,0 +1,1594 @@
+% \iffalse
+%
+%% File l3bigint.dtx Copyright (C) 2011-2013 The LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3c of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the "l3trial bundle" (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/svnroot/experimental/trunk/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX Project Team.
+%%
+%% -----------------------------------------------------------------------
+%%
+%
+%<*driver|package>
+\RequirePackage{expl3, l3str}
+\GetIdInfo$Id: l3bigint.dtx 2968 2011-11-20 06:03:34Z bruno $
+  {L3 Experimental support for unbounded integers}
+%</driver|package>
+%<*driver>
+\documentclass[full]{l3doc}
+\begin{document}
+  \DocInput{\jobname.dtx}
+\end{document}
+%</driver>
+% \fi
+%
+% \title{^^A
+%   The \pkg{l3bigint} package\\ Unbounded integers^^A
+%   \thanks{This file describes v\ExplFileVersion,
+%      last revised \ExplFileDate.}^^A
+% }
+%
+% \author{^^A
+%  The \LaTeX3 Project\thanks
+%    {^^A
+%      E-mail:
+%        \href{mailto:latex-team@latex-project.org}
+%          {latex-team@latex-project.org}^^A
+%    }^^A
+% }
+%
+% \date{Released \ExplFileDate}
+%
+% \maketitle
+%
+% \begin{documentation}
+%
+% \section{\pkg{l3bigint} documentation}
+%
+% This package aims to provide the complete set of \pkg{l3int}
+% functions, but without bounds on the integers used.  The package will
+% also provide more elaborate functions, useful for factorization,
+% computing the \texttt{gcd} of two numbers, \emph{etc.}  There is no
+% plan to implement expression parsing.  Thus, \cs{bigint_set:Nn} only
+% accepts a single number as its second argument.
+%
+% The functions implemented here could be useful to some niche users
+% (\emph{e.g.} myself when developing \pkg{l3rand}), but should not go
+% into the format.
+%
+% A \meta{big integer} consists of a \meta{sign} (arbitrary, possibly
+% empty, string of |+| or |-| tokens) and an \meta{absolute value}
+% (arbitrary, possibly empty, string of decimal digits), or any token
+% list |f|-expanding to a \meta{big integer}.  Spaces are ignored.  For
+% instance, after setting the token list |\l_zero_tl| to contain |0|,
+% the following are valid \meta{big integers}.
+% \begin{verbatim}
+%   0 ~ 12 ~ 3
+%   +--123
+%   \l_zero_tl 123 ~ \c_zero_tl
+%   +---+ ~ \l_zero_tl
+%   +--
+% \end{verbatim}
+% The result of any function takes a canonical form which is the
+% shortest string representing the big integer.  Namely, positive
+% numbers are expressed as a string of digits with no leading~|0|,
+% negative numbers are expressed similarly, with a leading~|-|, and
+% $0$~is expressed as~|0|.
+%
+% \section{Creating and initialising big integers}
+%
+% \begin{function}{\bigint_new:N, \bigint_new:c}
+%   \begin{syntax}
+%     \cs{bigint_new:N} \meta{bigint~var}
+%   \end{syntax}
+%   Creates a new \meta{big integer variable} or raises an error if the
+%   name is already taken.  The declaration is global.  The \meta{big
+%     integer variable} will initially be equal to $0$.
+% \end{function}
+%
+% \begin{function}{\bigint_const:Nn, \bigint_const:cn}
+%   \begin{syntax}
+%     \cs{bigint_const:Nn} \meta{bigint~var} \Arg{bigint}
+%   \end{syntax}
+%   Creates a new constant \meta{big~integer~variable} or raises an
+%   error if the name is already taken.  The value of the \meta{big
+%     integer variable} will be set globally to the \meta{big integer}.
+% \end{function}
+%
+% \begin{function}
+%   {\bigint_zero:N, \bigint_zero:c, \bigint_gzero:N, \bigint_gzero:c}
+%   \begin{syntax}
+%     \cs{bigint_zero:N} \meta{bigint~var}
+%   \end{syntax}
+%   Sets \meta{big integer variable} to $0$.
+% \end{function}
+%
+% \begin{function}
+%   {
+%     \bigint_zero_new:N, \bigint_zero_new:c,
+%     \bigint_gzero_new:N, \bigint_gzero_new:c
+%   }
+%   \begin{syntax}
+%     \cs{bigint_zero_new:N} \meta{bigint~var}
+%   \end{syntax}
+%   Ensures that the \meta{big integer variable} exists globally by
+%   applying \cs{bigint_new:N} if necessary, then applies
+%   \cs{bigint_(g)zero:N} to leave the \meta{big integer variable} set
+%   to zero.
+% \end{function}
+%
+% \begin{function}
+%   {
+%     \bigint_set_eq:NN,  \bigint_set_eq:cN,
+%     \bigint_set_eq:Nc,  \bigint_set_eq:cc,
+%     \bigint_gset_eq:NN, \bigint_gset_eq:cN,
+%     \bigint_gset_eq:Nc, \bigint_gset_eq:cc
+%   }
+%   \begin{syntax}
+%     \cs{bigint_set_eq:NN} \meta{bigint~var_1} \meta{bigint~var_2}
+%   \end{syntax}
+%   Sets the content of the first \meta{big integer variable} equal to
+%   that of the second.
+% \end{function}
+%
+% \begin{function}[EXP, pTF]{\bigint_if_exist:N, \bigint_if_exist:c}
+%   \begin{syntax}
+%     \cs{bigint_if_exist_p:N} \meta{bigint~var}
+%     \cs{bigint_if_exist:NTF} \meta{bigint~var} \Arg{true code} \Arg{false code}
+%   \end{syntax}
+%   Tests whether the \meta{big integer variable} is currently defined.
+%   This does not check that the \meta{big integer variable} really is a
+%   big integer variable.
+% \end{function}
+%
+% \section{Setting and incrementing big integers}
+%
+% \begin{function}
+%   {\bigint_add:Nn, \bigint_add:cn, \bigint_gadd:Nn, \bigint_gadd:cn}
+%   \begin{syntax}
+%     \cs{bigint_add:Nn} \meta{bigint~var} \Arg{bigint}
+%   \end{syntax}
+%   Adds the \meta{big integer} to the content of the \meta{big integer
+%     variable}.
+% \end{function}
+%
+% \begin{function}
+%   {\bigint_decr:N, \bigint_decr:c, \bigint_gdecr:N, \bigint_gdecr:c}
+%   \begin{syntax}
+%     \cs{bigint_decr:N} \meta{bigint~var}
+%   \end{syntax}
+%   Decreases the value stored in \meta{big integer variable} by~$1$.
+% \end{function}
+%
+% \begin{function}
+%   {\bigint_incr:N, \bigint_incr:c, \bigint_gincr:N, \bigint_gincr:c}
+%   \begin{syntax}
+%     \cs{bigint_incr:N} \meta{bigint~var}
+%   \end{syntax}
+%   Increases the value stored in \meta{big integer variable} by~$1$.
+% \end{function}
+%
+% \begin{function}
+%   {\bigint_set:Nn, \bigint_set:cn, \bigint_gset:Nn, \bigint_gset:cn}
+%   \begin{syntax}
+%     \cs{bigint_set:Nn} \meta{bigint~var} \Arg{bigint}
+%   \end{syntax}
+%   Sets the \meta{big integer variable} to the value of the \meta{big
+%     integer}.
+% \end{function}
+%
+% \begin{function}
+%   {\bigint_sub:Nn, \bigint_sub:cn, \bigint_gsub:Nn, \bigint_gsub:cn}
+%   \begin{syntax}
+%     \cs{bigint_sub:Nn} \meta{bigint~var} \Arg{bigint}
+%   \end{syntax}
+%   Subtracts the \meta{big integer} from the content of the \meta{big
+%     integer variable}.
+% \end{function}
+%
+% \section{Using integers}
+%
+% \begin{function}[EXP]{\bigint_use:N, \bigint_use:c}
+%   \begin{syntax}
+%     \cs{bigint_use:N} \meta{bigint~var}
+%   \end{syntax}
+%   Recovers the content of a \meta{big integer variable} and places it
+%   directly in the input stream.  An error will be raised if the
+%   variable does not exist or if it is invalid.  Note that it is
+%   possible to use a \meta{bigint~var} directly without an accessor
+%   function.
+% \end{function}
+%
+% \section{Unary big-integer operations}
+%
+% \begin{function}[EXP]{\bigint_abs:n}
+%   \begin{syntax}
+%     \cs{bigint_abs:n} \Arg{bigint}
+%   \end{syntax}
+%   Expands to the absolute value of the \meta{big integer}.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_sign:n}
+%   \begin{syntax}
+%     \cs{bigint_sign:n} \Arg{bigint}
+%   \end{syntax}
+%   Expands to the sign ($-1$, $0$, or $1$) of the \meta{big integer}.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_to_decimal:n}
+%   \begin{syntax}
+%     \cs{bigint_to_decimal:n} \Arg{bigint}
+%   \end{syntax}
+%   Expands to the canonical representation of the \meta{big integer}.
+% \end{function}
+%
+% \section{Binary big-integer operations}
+%
+% \begin{function}[EXP]{\bigint_add:nn}
+%   \begin{syntax}
+%     \cs{bigint_add:nn} \Arg{bigint_1} \Arg{bigint_2}
+%   \end{syntax}
+%   Evaluates the sum of the two \meta{big integers}, and leaves the
+%   result in the input stream.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_sub:nn}
+%   \begin{syntax}
+%     \cs{bigint_sub:nn} \Arg{bigint_1} \Arg{bigint_2}
+%   \end{syntax}
+%   Evaluates the difference of the two \meta{big integers}, and leaves
+%   the result in the input stream.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_mul:nn}
+%   \begin{syntax}
+%     \cs{bigint_mul:nn} \Arg{bigint_1} \Arg{bigint_2}
+%   \end{syntax}
+%   Evaluates the product of the two \meta{big integers}, and leaves the
+%   result in the input stream.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_div_round:nn}
+%   \begin{syntax}
+%     \cs{bigint_div_round:nn} \Arg{bigint_1} \Arg{bigint_2}
+%   \end{syntax}
+%   Evaluates the result of dividing the first \meta{big integer} by the
+%   second, rounding any remainder.  Ties are rounded away from zero.
+%   The result is left in the input stream.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_div_truncate:nn}
+%   \begin{syntax}
+%     \cs{bigint_div_truncate:nn} \Arg{bigint_1} \Arg{bigint_2}
+%   \end{syntax}
+%   Evaluates the result of dividing the first \meta{big integer} by the
+%   second, truncating any remainder.  The result is left in the input
+%   stream.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_max:nn, \bigint_min:nn}
+%   \begin{syntax}
+%     \cs{bigint_max:nn} \Arg{bigint_1} \Arg{bigint_2}
+%     \cs{bigint_min:nn} \Arg{bigint_1} \Arg{bigint_2}
+%   \end{syntax}
+%   Leaves either the larger or smaller of the two \meta{big integers}
+%   in the input stream.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_mod:nn}
+%   \begin{syntax}
+%     \cs{bigint_mod:nn} \Arg{bigint_1} \Arg{intexpr_2}
+%   \end{syntax}
+%   Evaluates the integer remainder of dividing the first \meta{big
+%     integer} by the second, and leaves the result in the input stream.
+% \end{function}
+%
+% \section{Big integer conditionals}
+%
+% \begin{function}[EXP, pTF]{\bigint_compare:nNn}
+%   \begin{syntax}
+%     \cs{bigint_compare_p:nNn} \Arg{bigint_1} \meta{relation} \Arg{bigint_2} \\
+%     \cs{bigint_compare:nNnTF}
+%     ~~\Arg{bigint_1} \meta{relation} \Arg{bigint_2}
+%     ~~\Arg{true code} \Arg{false code}
+%   \end{syntax}
+%   The two \meta{big integers} are compared using the \meta{relation}:
+%   \begin{center}
+%     \begin{tabular}{ll}
+%       Equal                 & |=| \\
+%       Greater than          & |>| \\
+%       Less than             & |<| \\
+%     \end{tabular}
+%   \end{center}
+% \end{function}
+%
+% \begin{function}[EXP, pTF]{\bigint_compare:n}
+%   \begin{syntax}
+%     \cs{bigint_compare_p:n} \{ \meta{bigint_1} \meta{relation} \meta{bigint_2} \} \\
+%     \cs{bigint_compare:nTF}
+%     ~~\{ \meta{bigint_1} \meta{relation} \meta{bigint_2} \}
+%     ~~\Arg{true code} \Arg{false code}
+%   \end{syntax}
+%   The two \meta{big integers} are compared using the \meta{relation}:
+%   \begin{center}
+%     \begin{tabular}{ll}
+%       Equal                    & |=| or |==| \\
+%       Greater than or equal to & |>=|        \\
+%       Greater than             & |>|         \\
+%       Less than or equal to    & |<=|        \\
+%       Less than                & |<|         \\
+%       Not equal                & |!=|        \\
+%     \end{tabular}
+%   \end{center}
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_case:nnn}
+%   \begin{syntax}
+%     \cs{bigint_case:nnn} \Arg{big integer} \\
+%     ~~|{| \\
+%     ~~~~\Arg{bigint case_1} \Arg{code case_1} \\
+%     ~~~~\Arg{bigint case_2} \Arg{code case_2} \\
+%     ~~~~\ldots \\
+%     ~~~~\Arg{bigint case_n} \Arg{code case_n} \\
+%     ~~|}| \\
+%     ~~\Arg{else code}
+%   \end{syntax}
+%   This function compares the \meta{big integer} in turn to each of the
+%   \meta{big integer cases}.  If the two are equal then the associated
+%   \meta{code} is left in the input stream.  If none of the tests are
+%   \texttt{true} then the \texttt{else code} will be left in the input
+%   stream.  For example
+%   \begin{verbatim}
+%     \bigint_case:nnn
+%       { 12345678901234567890 }
+%       {
+%         { 567 }                    { Small }
+%         { 12345678901234567890 }   { Large }
+%         { -1 }                     { Negative }
+%       }
+%       { No idea! }
+%    \end{verbatim}
+%    will leave \enquote{\texttt{Large}} in the input stream.
+% \end{function}
+%
+% \begin{function}[EXP, pTF]{\bigint_if_even:n, \bigint_if_odd:n}
+%   \begin{syntax}
+%     \cs{bigint_if_odd_p:n} \Arg{big integer}
+%     \cs{bigint_if_odd:nTF} \Arg{big integer} \Arg{true code} \Arg{false code}
+%   \end{syntax}
+%   This function evaluates whether the \meta{big integer} is odd or
+%   even, as appropriate.
+% \end{function}
+%
+% \begin{function}[EXP, pTF]{\bigint_if_int:n}
+%   \begin{syntax}
+%     \cs{bigint_if_int_p:n} \Arg{big integer}
+%     \cs{bigint_if_odd:nTF} \Arg{big integer} \Arg{true code} \Arg{false code}
+%   \end{syntax}
+%   This function tests whether the \meta{big integer} fits within the
+%   range of allowable \TeX{} integers.
+% \end{function}
+%
+% \section{Factorization}
+%
+% \begin{function}[EXP]{\bigint_count_divisors:n}
+%   \begin{syntax}
+%     \cs{bigint_count_divisors:n} \Arg{bigint}
+%   \end{syntax}
+%   Counts the number of divisors of the \meta{big integer}, and leaves
+%   this information in the input stream.  Negative numbers have the
+%   same number of divisors as their absolute value.  Zero triggers an
+%   (expandable) error, then leads to the same result as~$1$,
+%   namely~$1$.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_factor:n}
+%   \begin{syntax}
+%     \cs{bigint_factor:n} \Arg{bigint}
+%   \end{syntax}
+%   Factorizes the \meta{big integer} and leaves the resulting prime
+%   factors in the input stream.  The prime factors are returned in
+%   decreasing order, with multiplicity, and each factor is braced.
+%   Negative integers lead to a result ending with the item~|{-1}|.
+%   Zero triggers an (expandable) error and an empty result, identical
+%   to the result for~$1$.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_gcd:nn}
+%   \begin{syntax}
+%     \cs{bigint_gcd:nn} \Arg{bigint_1} \Arg{bigint_2}
+%   \end{syntax}
+%   Computes the greatest common divisor of the two \meta{big integers},
+%   leaving the result in the input stream.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_lcm:nn}
+%   \begin{syntax}
+%     \cs{int_lcm:nn} \Arg{bigint_1} \Arg{bigint_2}
+%   \end{syntax}
+%   Computes the least common multiple of the two \meta{big integers},
+%   leaving the result in the input stream.
+% \end{function}
+%
+% \begin{function}[EXP]{\bigint_phi:n}
+%   \begin{syntax}
+%     \cs{int_phi:n} \Arg{bigint}
+%   \end{syntax}
+%   Applies Euler's totient function to the \meta{big integer} and
+%   leaves the result in the input stream.
+% \end{function}
+%
+% \section{Tools for parsing}
+%
+% \begin{function}[EXP]{\bigint_split_from_tl:n}
+%   \begin{syntax}
+%     \cs{bigint_split_from_tl:n} \Arg{tokens}
+%   \end{syntax}
+%   Finds a \meta{big integer} in the \meta{tokens}, starting from the
+%   first token, and expands to two brace groups, containing the
+%   \meta{big integer} and the \meta{remaining tokens}.  This may be
+%   useful if someone wants to implement expression parsing.
+% \end{function}
+%
+% \section{Viewing big integers}
+%
+% \begin{function}{\bigint_show:N, \bigint_show:c}
+%   \begin{syntax}
+%     \cs{bigint_show:N} \meta{bigint~var}
+%   \end{syntax}
+%   Displays the value of the \meta{big integer} on the terminal.
+% \end{function}
+%
+% \begin{function}{\bigint_show:n}
+%   \begin{syntax}
+%     \cs{bigint_show:n} \Arg{big integer}
+%   \end{syntax}
+%   Displays the value of the \meta{big integer} on the terminal.
+% \end{function}
+%
+% \section{Scratch big integers}
+%
+% \begin{variable}{\l_tmpa_bigint, \l_tmpb_bigint}
+%   Scratch big integers for local assignment.  These are never used by
+%   the kernel code, and so are safe for use with any \LaTeX3-defined
+%   function. However, they may be overwritten by other non-kernel
+%   code and so should only be used for short-term storage.
+% \end{variable}
+%
+% \begin{variable}{\g_tmpa_bigint, \g_tmpb_bigint}
+%   Scratch big integer for global assignment.  These are never used by
+%   the kernel code, and so are safe for use with any \LaTeX3-defined
+%   function. However, they may be overwritten by other non-kernel
+%   code and so should only be used for short-term storage.
+% \end{variable}
+%
+% \section{Internal \pkg{l3bigint} functions}
+%
+% \begin{function}[EXP, int]{\__bigint_read_do:nn}
+%   \begin{syntax}
+%     \cs{__bigint_read_do:nn} \Arg{tokens} \Arg{code}
+%   \end{syntax}
+%   Reads a \meta{big integer} among the \meta{tokens}, starting from
+%   the first token, then places the \meta{code} into the input stream,
+%   followed by three brace groups containing the \meta{sign} of the
+%   \meta{big integer}, its \meta{absolute value}, and the
+%   \meta{remaining tokens}.
+% \end{function}
+%
+% \begin{function}[EXP, int]{\__bigint_value_do:nn}
+%   \begin{syntax}
+%     \cs{__bigint_value_do:nn} \Arg{bigint} \Arg{code}
+%   \end{syntax}
+%   Places the \meta{code} into the input stream, followed by two brace
+%   groups containing the \meta{sign} of the \meta{big integer}, and its
+%   \meta{absolute value}, as defined for \cs{bigint_sign:n} and
+%   \cs{bigint_abs:n}.
+% \end{function}
+%
+% \end{documentation}
+%
+% \begin{implementation}
+%
+% \section{\pkg{l3bigint} implementation}
+%
+%    \begin{macrocode}
+%<*initex|package>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%<@@=bigint>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%<*package>
+\ProvidesExplPackage
+  {\ExplFileName}{\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+%</package>
+%    \end{macrocode}
+%
+% \subsection{Helpers}
+%
+% \begin{macro}[aux, EXP]{\__msg_kernel_expandable_error:nnf}
+%    \begin{macrocode}
+\cs_generate_variant:Nn \__msg_kernel_expandable_error:nnn { nnf }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[aux, EXP]{\use:nff}
+%   A variant to expand the arguments of various operations.
+%    \begin{macrocode}
+\cs_generate_variant:Nn \use:nnn { nff }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[aux, EXP]{\use_ii_i:nn}
+%   Swapping arguments.
+%    \begin{macrocode}
+\cs_if_exist:NF \use_ii_i:nn
+  { \cs_new:Npn \use_ii_i:nn #1#2 { #2 #1 } }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[aux, EXP]{\@@_sign_to_tl:w}
+%   Converts from $1$ or~$-1$ to the empty token list or a single~|-|
+%   character.
+%   \begin{macrocode}
+\cs_new:Npn \@@_sign_to_tl:w #1 1 {#1}
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsubsection{Reading big integers}
+%
+% \begin{macro}[int, EXP]{\@@_read_do:nn}
+% \begin{macro}[aux, EXP]
+%   {
+%     \@@_read_sign_loop:N,
+%     \@@_read_zeros_loop:N,
+%     \@@_read_abs_loop:N,
+%     \@@_read_after:wwwn
+%   }
+%   Read the sign as an integer of the form $\meta{signs}1$, to let
+%   \TeX{} perform the expansion.  The macro \cs{@@_read_sign_loop:N}
+%   compares its argument to~|+| and~|-|, and leaves nothing or |-| in
+%   the input stream for those signs before looping.  If its argument is
+%   not a sign, the integer is ended with \cs{c_one} and a semicolon,
+%   and \cs{@@_read_zeros_loop:N} is called.  This starts a loop to find
+%   and discard zeros, then \cs{@@_read_abs_loop:N} finds digits and
+%   leaves them to the left into the input stream, continuing expansion
+%   with a combination of \cs{exp_after:wN} and \cs{__int_value:w}.  The
+%   loop ends with one last \cs{__int_value:w} encountering
+%   \cs{c_minus_one} when a non-digit token is seen.  Finally,
+%   \cs{@@_read_after:Nwwn} cleans up: |#1| is the sign ($1$~or~$-1$),
+%   |#2| the absolute value, |#3| is unprocessed tokens, and |#4| the
+%   code to be performed.  Note that an empty |#2| means that the number
+%   is zero, hence the sign |#1| is ignored, and we use~$0$ instead.  At
+%   every step of each loop, expansion is performed with
+%   \cs{tex_romannumeral:D} |-`0| \cs{use:n}, the last function being
+%   there to prevent upcoming spaces from stopping romannumeral
+%   expansion.
+%    \begin{macrocode}
+\cs_new:Npn \@@_read_do:nn #1
+  {
+    \exp_after:wN \@@_read_after:wwwn
+    \__int_value:w
+      \exp_after:wN \@@_read_sign_loop:N
+      \tex_romannumeral:D -`0 \use:n
+      #1 ; \s__stop
+  }
+\cs_new:Npn \@@_read_sign_loop:N #1
+  {
+    \if:w + \if:w - \exp_not:N #1 + \fi: \exp_not:N #1
+      \exp_after:wN \@@_read_sign_loop:N
+      \tex_romannumeral:D -`0 \exp_after:wN \use:n
+    \else:
+        1 \exp_after:wN ;
+      \__int_value:w
+        \exp_after:wN \@@_read_zeros_loop:N
+        \exp_after:wN #1
+    \fi:
+  }
+\cs_new:Npn \@@_read_zeros_loop:N #1
+  {
+    \if:w 0 \exp_not:N #1
+      \exp_after:wN \@@_read_zeros_loop:N
+      \tex_romannumeral:D -`0 \exp_after:wN \use:n
+    \else:
+      \exp_after:wN \@@_read_abs_loop:N
+      \exp_after:wN #1
+    \fi:
+  }
+\cs_new:Npn \@@_read_abs_loop:N #1
+  {
+    \if_int_compare:w \c_nine < 1 \exp_not:N #1 \exp_stop_f:
+      #1 \exp_after:wN \exp_stop_f:
+      \__int_value:w
+        \exp_after:wN \@@_read_abs_loop:N
+        \tex_romannumeral:D -`0 \exp_after:wN \use:n
+    \else:
+      \exp_after:wN \c_minus_one
+      \exp_after:wN #1
+    \fi:
+  }
+\cs_new:Npn \@@_read_after:wwwn #1 ; #2 -1 #3 ; \s__stop #4
+  {
+    \tl_if_empty:nTF {#2}
+      { #4 { 0 } { 0 } {#3} }
+      { #4 {#1} {#2} {#3} }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[int, EXP]{\@@_value_do:nn}
+% \begin{macro}[aux, EXP]{\@@_value_do_aux:nnnn}
+%    \begin{macrocode}
+\cs_new:Npn \@@_value_do:nn #1#2
+  { \@@_read_do:nn {#1} { \@@_value_do_aux:nnnn {#2} } }
+\cs_new:Npn \@@_value_do_aux:nnnn #1#2#3#4
+  {
+    \tl_if_empty:nF {#4}
+      {
+        \__msg_kernel_expandable_error:nnn
+          { bigint } { trailing-material } {#4}
+      }
+    #1 {#2} {#3}
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsubsection{Comparing big integers}
+%
+% \begin{macro}[int, EXP]{\@@_compare:nnnn}
+% \begin{macro}[aux, EXP]{\@@_compare_aux:nn}
+%   Compare the \meta{big integer} with sign~|#1| and absolute
+%   value~|#3| with the \meta{big integer} with sign~|#3| and absolute
+%   value~|#4|, and expands to $-1$~if the first is less than the
+%   second, $0$~if they are equal, and $1~if the first is larger.  If
+%   the signs |#1| and~|#3| are distinct, the sign of their difference
+%   is the result.  Otherwise, if the two integers have a different
+%   number of digits, the shortest is smaller.  Finally, integers with
+%   the same number of digits can be compared with \cs{pdftex_strcmp:D}.
+%   The auxiliary \cs{@@_compare_aux:nn} finds the sign of its first
+%   argument by evaluating it and keeping only the first token: if this
+%   is~|-|, the argument is negative; if the first token is~|0|, the
+%   argument is zero, otherwise it is positive.
+%    \begin{macrocode}
+\cs_new:Npn \@@_compare:nnnn #1#2#3#4
+  {
+    \@@_compare_aux:nn { #1 - #3 }
+      {
+        \@@_compare_aux:nn
+          { \tl_count:n {#2} - \tl_count:n {#4} }
+          { \pdftex_strcmp:D {#2} {#4} }
+      }
+  }
+\cs_new:Npn \@@_compare_aux:nn #1#2
+  {
+    \exp_args:Nf \str_case_x:nnn
+      { \exp_args:Nf \tl_head:n { \int_eval:n {#1} } }
+      {
+        { - } { -1 }
+        { 0 } {#2}
+      }
+      { 1 }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsection{Creating and initialising big integers}
+%
+% \begin{variable}{\c_zero_bigint}
+%   A token list containing just zero.
+%    \begin{macrocode}
+\tl_const:Nn \c_zero_bigint { 0 }
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{macro}{\bigint_new:N, \bigint_new:c}
+%   Big integers are simply token lists initialized at~$0$.
+%    \begin{macrocode}
+\cs_new_protected:Npn \bigint_new:N #1
+  { \cs_new_eq:NN #1 \c_zero_bigint }
+\cs_generate_variant:Nn \bigint_new:N { c }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\bigint_const:Nn, \bigint_const:cn}
+%   Constant token list.
+%    \begin{macrocode}
+\cs_new_protected:Npn \bigint_const:Nn #1#2
+  { \tl_const:Nx #1 { \bigint_to_decimal:n {#2} } }
+\cs_generate_variant:Nn \bigint_const:Nn { c }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\bigint_zero:N, \bigint_zero:c}
+% \begin{macro}{\bigint_gzero:N, \bigint_gzero:c}
+%   Functions that reset a \meta{big integer} to zero.
+%    \begin{macrocode}
+\cs_new_protected:Npn \bigint_zero:N  #1 { \cs_set_eq:NN #1 \c_zero_bigint }
+\cs_new_protected:Npn \bigint_gzero:N #1 { \cs_gset_eq:NN #1 \c_zero_bigint }
+\cs_generate_variant:Nn \bigint_zero:N  { c }
+\cs_generate_variant:Nn \bigint_gzero:N { c }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}
+%   {
+%     \bigint_zero_new:N, \bigint_zero_new:c,
+%     \bigint_gzero_new:N, \bigint_gzero_new:c
+%   }
+%   Create a variable if needed, otherwise clear it.
+%    \begin{macrocode}
+\cs_new_protected:Npn \bigint_zero_new:N  #1
+  { \bigint_if_exist:NTF #1 { \bigint_zero:N #1 } { \bigint_new:N #1 } }
+\cs_new_protected:Npn \bigint_gzero_new:N #1
+  { \bigint_if_exist:NTF #1 { \bigint_gzero:N #1 } { \bigint_new:N #1 } }
+\cs_generate_variant:Nn \bigint_zero_new:N  { c }
+\cs_generate_variant:Nn \bigint_gzero_new:N { c }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}
+%   {
+%     \bigint_set_eq:NN, \bigint_set_eq:cN,
+%     \bigint_set_eq:Nc, \bigint_set_eq:cc,
+%     \bigint_gset_eq:NN, \bigint_gset_eq:cN,
+%     \bigint_gset_eq:Nc, \bigint_gset_eq:cc
+%   }
+%   Copy the tl functions.
+%    \begin{macrocode}
+\cs_new_eq:NN \bigint_set_eq:NN \tl_set_eq:NN
+\cs_new_eq:NN \bigint_gset_eq:NN \tl_gset_eq:NN
+\cs_generate_variant:Nn \bigint_set_eq:NN { c , Nc , cc }
+\cs_generate_variant:Nn \bigint_gset_eq:NN { c , Nc , cc }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[pTF]{\bigint_if_exist:N, \bigint_if_exist:c}
+%   Copies of the \texttt{cs} functions defined in \pkg{l3basics}.
+%    \begin{macrocode}
+\prg_new_eq_conditional:NNn \bigint_if_exist:N \cs_if_exist:N { TF , T , F , p }
+\prg_new_eq_conditional:NNn \bigint_if_exist:c \cs_if_exist:c { TF , T , F , p }
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Setting and incrementing big integers}
+%
+% \begin{macro}{\bigint_add:Nn, \bigint_add:cn}
+% \begin{macro}{\bigint_gadd:Nn, \bigint_gadd:cn}
+% \begin{macro}{\bigint_sub:Nn, \bigint_sub:cn}
+% \begin{macro}{\bigint_gsub:Nn, \bigint_gsub:cn}
+%   Use \cs{bigint_add:nn} and the like.
+%    \begin{macrocode}
+\cs_new_protected:Npn \bigint_add:Nn #1#2
+  { \tl_set:Nx #1 { \bigint_add:nn {#1} {#2} } }
+\cs_new_protected:Npn \bigint_gadd:Nn #1#2
+  { \tl_gset:Nx #1 { \bigint_add:nn {#1} {#2} } }
+\cs_new_protected:Npn \bigint_sub:Nn #1#2
+  { \tl_set:Nx #1 { \bigint_sub:nn {#1} {#2} } }
+\cs_new_protected:Npn \bigint_gsub:Nn #1#2
+  { \tl_gset:Nx #1 { \bigint_sub:nn {#1} {#2} } }
+\cs_generate_variant:Nn \bigint_add:Nn  { c }
+\cs_generate_variant:Nn \bigint_gadd:Nn { c }
+\cs_generate_variant:Nn \bigint_sub:Nn  { c }
+\cs_generate_variant:Nn \bigint_gsub:Nn { c }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\bigint_incr:N, \bigint_incr:c}
+% \begin{macro}{\bigint_gincr:N, \bigint_gincr:c}
+% \begin{macro}{\bigint_decr:N, \bigint_decr:c}
+% \begin{macro}{\bigint_gdecr:N, \bigint_gdecr:c}
+%   The same, using $1$ as a second argument.
+%    \begin{macrocode}
+\cs_new_protected:Npn \bigint_incr:N #1 { \bigint_add:Nn #1 { 1 } }
+\cs_new_protected:Npn \bigint_decr:N #1 { \bigint_sub:Nn #1 { 1 } }
+\cs_new_protected:Npn \bigint_gincr:N #1 { \bigint_gadd:Nn #1 { 1 } }
+\cs_new_protected:Npn \bigint_gdecr:N #1 { \bigint_gsub:Nn #1 { 1 } }
+\cs_generate_variant:Nn \bigint_incr:N  { c }
+\cs_generate_variant:Nn \bigint_decr:N  { c }
+\cs_generate_variant:Nn \bigint_gincr:N { c }
+\cs_generate_variant:Nn \bigint_gdecr:N { c }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\bigint_set:Nn, \bigint_set:cn}
+% \begin{macro}{\bigint_gset:Nn, \bigint_gset:cn}
+%   Use \cs{tl_set:Nx} with \cs{bigint_to_decimal:n}.
+%    \begin{macrocode}
+\cs_new_protected:Npn \bigint_set:Nn #1#2
+  { \tl_set:Nx #1 { \bigint_to_decimal:n {#2} } }
+\cs_new_protected:Npn \bigint_gset:Nn #1#2
+  { \tl_gset:Nx #1 { \bigint_to_decimal:n {#2} } }
+\cs_generate_variant:Nn \bigint_set:Nn  { c }
+\cs_generate_variant:Nn \bigint_gset:Nn { c }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsection{Using integers}
+%
+% \begin{macro}[EXP]{\bigint_use:N, \bigint_use:c}
+%   Big integers are just token lists.
+%    \begin{macrocode}
+\cs_new_eq:NN \bigint_use:N \tl_use:N
+\cs_new_eq:NN \bigint_use:c \tl_use:c
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Unary operations}
+%
+% \begin{macro}[EXP]{\bigint_to_decimal:n}
+% \begin{macro}[aux, EXP]{\@@_to_decimal:nn}
+%   If the \meta{sign} is negative~(|-1|), put a~|-| before the
+%   \meta{absolute value}.
+%    \begin{macrocode}
+\cs_new:Npn \bigint_to_decimal:n #1
+  { \@@_value_do:nn {#1} { \@@_to_decimal:nn } }
+\cs_new:Npn \@@_to_decimal:nn #1#2
+  {
+    \if_int_compare:w #1 = \c_minus_one \exp_after:wN - \fi:
+    #2
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP]{\bigint_sign:n, \bigint_abs:n}
+%   The auxiliary \cs{@@_value_do:nn} provides us with \Arg{sign}
+%   \Arg{absolute value}, so we just need to leave the first or second
+%   argument in the input stream.
+%    \begin{macrocode}
+\cs_new:Npn \bigint_sign:n #1 { \@@_value_do:nn {#1} { \use_i:nn } }
+\cs_new:Npn \bigint_abs:n #1 { \@@_value_do:nn {#1} { \use_ii:nn } }
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Big integer conditionals}
+%
+% \begin{macro}[EXP, pTF]{\bigint_compare:nNn}
+%   Find the \meta{sign} and \meta{absolute value} of both \meta{big
+%     integer} operands, compare them with \cs{@@_compare:nnnn}, which
+%   expands to $-1$, $0$, or~$1$ depending on whether the first
+%   \meta{big integer} is smaller than, equal to, or bigger than the
+%   second.
+%    \begin{macrocode}
+\prg_new_conditional:Npnn \bigint_compare:nNn #1#2#3 { p , T , F , TF }
+  {
+    \if_int_compare:w
+      \@@_value_do:nn {#3} { \@@_value_do:nn {#1} \@@_compare:nnnn }
+      #2 \c_zero
+      \prg_return_true:
+    \else:
+      \prg_return_false:
+    \fi:
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}[EXP, pTF]{\bigint_compare:n}
+% \begin{macro}[EXP, aux]
+%   {
+%     \@@_compare_return:nnn,
+%     \@@_compare:NNwn,
+%     \@@_compare:wn,
+%     \@@_compare_error:Nw
+%   }
+%   Read a \meta{big integer}.  Then in the \meta{remaining tokens} find
+%   a comparison operator by looking at the first two: this is done
+%   thanks to an \cs{str_case:nnn} construction.  Each case opens a
+%   primitive \TeX{} conditional, typically an integer comparison.  The
+%   second operand of that comparison is obtained from the expansion of
+%   \cs{@@_compare:wn}, which calls \cs{@@_value_do:nn} to parse the
+%   tokens after the comparison operator and feed the two resulting
+%   brace groups to \cs{@@_compare:nnnn}, whose first two arguments are
+%   the first big integer we read (see \cs{@@_compare_return:nnn}, where
+%   \cs{exp_stop_f:} is also inserted to end the integer operand of the
+%   \TeX{} conditional).  The \TeX{} conditional is then performed, and
+%   the appropriate \cs{prg_return_true:} or \cs{prg_return_false:} is
+%   called to return the result.
+%    \begin{macrocode}
+\prg_new_conditional:Npnn \@@_compare:n #1 { p , T , F , TF }
+  { \@@_read_do:nn {#1} { \@@_compare_return:nnn } }
+\cs_new:Npn \@@_compare_return:nnn #1#2#3
+  {
+    \@@_compare:NNwn #3 ; ; \s__stop
+        { \@@_compare:nnnn {#1} {#2} } \exp_stop_f:
+      \prg_return_true:
+    \else:
+      \prg_return_false:
+    \fi:
+  }
+\cs_new:Npn \@@_compare:NNwn #1#2
+  {
+    \str_case:nnn { #1 #2 }
+      {
+        { < = } { \if_int_compare:w  1 > \@@_compare:wn }
+        { = = } { \if_int_compare:w  0 = \@@_compare:wn }
+        { > = } { \if_int_compare:w -1 < \@@_compare:wn }
+        { ! = } { \if_int_odd:w \@@_compare:wn }
+        { < #2 } { \if_int_compare:w -1 = \@@_compare:wn #2 }
+        { = #2 } { \if_int_compare:w  0 = \@@_compare:wn #2 }
+        { > #2 } { \if_int_compare:w  1 = \@@_compare:wn #2 }
+      }
+      { \@@_compare_error:Nw #1 #2 }
+  }
+\cs_new:Npn \@@_compare:wn #1 ; ; \s__stop { \@@_value_do:nn {#1} }
+\cs_new:Npn \@@_compare_error:Nw #1#2 \fi:
+  {
+    \__msg_kernel_expandable_error:nnn
+      { bigint } { bad-comparison } {#1}
+    \prg_return_false:
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP]{\bigint_case:nnn}
+% \begin{macro}[EXP, aux]{\@@_case:nnn, \@@_case:nw, \@@_case_end:nw}
+%   For integer cases, the first task to fully expand the check
+%   condition. After that, a loop is started to compare each possible
+%   value and stop if the test is true. The tested value is put at the
+%   end to ensure that there is necessarily a match, which will fire the
+%   \enquote{else} pathway. The leading \tn{romannumeral} triggers an
+%   expansion which is then stopped in \cs{@@_case_end:nw}.  The
+%   comparison is not done with \cs{bigint_compare:nNnTF} because it
+%   would repeatedly parse the number to compare.  Instead, we rely on
+%   uniqueness of the decimal representation.
+%    \begin{macrocode}
+\cs_new:Npn \bigint_case:nnn #1
+  {
+    \tex_romannumeral:D
+    \exp_args:Nf \@@_case:nnn { \bigint_to_decimal:n {#1} }
+  }
+\cs_new:Npn \@@_case:nnn #1#2#3
+  { \@@_case:nw {#1} #2 {#1} {#3} \q_recursion_stop }
+\cs_new:Npn \@@_case:nw #1#2#3
+  {
+    \str_if_eq_x:nnTF {#1} { \bigint_to_decimal:n {#2} }
+      { \@@_case_end:nw {#3} }
+      { \@@_case:nw {#1} }
+  }
+\cs_new_eq:NN \@@_case_end:nw \__prg_case_end:nw
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP, pTF]{\bigint_if_odd:n, \bigint_if_even:n}
+% \begin{macro}[EXP, aux]{\@@_if_odd:NN}
+%   A predicate function.  Parse the number.  Then discard digits until
+%   the last, and ask \TeX{} to test its parity.
+%    \begin{macrocode}
+\prg_new_conditional:Npnn \bigint_if_odd:n #1 { p , T , F , TF}
+  {
+    \if_int_odd:w
+        \exp_last_unbraced:Nf \@@_if_odd:NN \bigint_abs:n {#1} ;
+      \prg_return_true:
+    \else:
+      \prg_return_false:
+    \fi:
+  }
+\prg_new_conditional:Npnn \bigint_if_even:n #1 { p , T , F , TF}
+  {
+    \if_int_odd:w
+        \exp_last_unbraced:Nf \@@_if_odd:NN \bigint_abs:n {#1} ;
+      \prg_return_false:
+    \else:
+      \prg_return_true:
+    \fi:
+  }
+\cs_new:Npn \@@_if_odd:NN #1#2
+  {
+    \token_if_eq_meaning:NNTF #2 ;
+      { #1 \exp_stop_f: } { \@@_if_odd:NN #2 }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP, pTF]{\bigint_if_int:n}
+% \begin{macro}[EXP, aux]{\@@_if_int:nn}
+%   True if the argument's \meta{absolute value} is less than~$2^{31}$.
+%    \begin{macrocode}
+\prg_new_conditional:Npnn \bigint_if_int:n #1 { p , T , F , TF }
+  { \@@_value_do:nn {#1} { \@@_if_int:nn } }
+\cs_new:Npn \@@_if_int:nn #1#2
+  {
+    \if_int_compare:w
+        \@@_compare:nnnn { 1 } {#2} { 1 } { 2147483648 }
+        = \c_minus_one
+      \prg_return_true:
+    \else:
+      \prg_return_false:
+    \fi:
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsection{Big integer binary operations}
+%
+% \begin{macro}[EXP]{\bigint_max:nn, \bigint_min:nn}
+% \begin{macro}[aux, EXP]{\@@_max:nnnnN}
+%   Parse, compare, and use.
+%    \begin{macrocode}
+\cs_new:Npn \bigint_max:nn #1#2
+  {
+    \@@_value_do:nn {#2}
+      { \@@_value_do:nn {#1} { \@@_max:nnnnN } } >
+  }
+\cs_new:Npn \bigint_min:nn #1#2
+  {
+    \@@_value_do:nn {#2}
+      { \@@_value_do:nn {#1} { \@@_max:nnnnN } } <
+  }
+\cs_new:Npn \@@_max:nnnnN #1#2#3#4#5
+  {
+    \int_compare:nNnTF
+      { \@@_compare:nnnn {#1} {#2} {#3} {#4} } #5 \c_zero
+      { \@@_to_decimal:nn {#1} {#2} }
+      { \@@_to_decimal:nn {#3} {#4} }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsubsection{Summing big integers}
+%
+% \begin{macro}[EXP]{\bigint_add:nn, \bigint_sub:nn}
+% \begin{macro}[aux, EXP]{\@@_sub:nnnn}
+%   Parse the two big integers.  If one is zero, no computation is
+%   needed, simply convert the appropriate pair \meta{sign}
+%   \meta{absolute value} to a decimal number.  Otherwise, filter out
+%   the case of equal numbers, which yields a vanishing result.  Start
+%   \cs{__int_value:w} to find the sign.  Order the absolute values in
+%   increasing order, and take care of leaving the correct sign into
+%   \cs{__int_value:w}.
+%    \begin{macrocode}
+\cs_new:Npn \bigint_sub:nn #1#2
+  {
+    \@@_value_do:nn {#2}
+      { \@@_value_do:nn {#1} { \@@_sub:nnnn } }
+  }
+\cs_new:Npn \bigint_add:nn #1#2 { \bigint_sub:nn {#1} { - #2 } }
+\cs_new:Npn \@@_sub:nnnn #1#2#3#4
+  {
+    \int_compare:nNnTF { #1 * #3 } = \c_zero
+      {
+        \int_compare:nNnTF {#3} = \c_zero
+          { \@@_to_decimal:nn {#1} {#2} }
+          { \@@_to_decimal:nn { - #3 } {#4} }
+      }
+      {
+        \str_if_eq_x:nnTF { #1 #2 } { #3 #4 }
+          { 0 }
+          {
+            \exp_after:wN \@@_sign_to_tl:w \__int_value:w
+              \@@_sign_to_tl:w #1
+              \int_compare:nNnTF
+                { \@@_compare:nnnn { 1 } {#2} { 1 } {#4} } < \c_zero
+                {
+                  \int_compare:nNnTF {#1} = {#3}
+                    { -1 \@@_add_signed:Nww - }
+                    { 1 \@@_add_signed:Nww + }
+                    #2 ; #4 ;
+                }
+                {
+                  \int_compare:nNnTF {#1} = {#3}
+                    { 1 \@@_add_signed:Nww - }
+                    { 1 \@@_add_signed:Nww + }
+                    #4 ; #2 ;
+                }
+          }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[int, EXP]{\@@_add_signed:Nww}
+% \begin{macro}[aux, EXP]
+%   {
+%     \@@_add_loop:Nww,
+%     \@@_add_end:w,
+%     \@@_add_after:N
+%   }
+%   Leaves \cs{exp_stop_f:} in the input stream, followed by the result
+%   of |#1#2 + #3|, which must be positive.
+%    \begin{macrocode}
+\cs_new:Npn \@@_add_signed:Nww #1 #2 ; #3 ;
+  {
+    \exp_after:wN \@@_add_after:N
+    \__int_value:w \__int_eval:w - 2 +
+      \exp_after:wN \@@_add_loop:Nww
+      \exp_after:wN #1
+      \tex_romannumeral:D -`0
+        \prg_replicate:nn
+          { \tl_count:n {#3} - \tl_count:n {#2} } { 0 }
+        #2 ? ;
+        #3 { ? \c_two \@@_add_end:w } \s__stop
+  }
+\cs_new:Npn \@@_add_loop:Nww #1 #2#3; #4
+  {
+    \use_none:n #4
+    \exp_after:wN \use_ii_i:nn
+    \exp_after:wN \__int_eval_end:
+    \__int_value:w \__int_eval:w
+      18 #1 #2 + #4
+      + \@@_add_loop:Nww #1 #3;
+  }
+\cs_new:Npn \@@_add_end:w #1 \s__stop { \__int_eval_end: }
+\cs_new:Npn \@@_add_after:N #1
+  { \token_if_eq_meaning:NNTF 0 #1 { \@@_add_after:N } { \exp_stop_f: #1 } }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsubsection{Multiplying big integers}
+%
+% \begin{macro}[EXP]{\bigint_mul:nn}
+% \begin{macro}[EXP, aux]{\@@_mul:nnnn, \@@_mul:nw, \@@_mul:wnw}
+%    \begin{macrocode}
+\cs_new:Npn \bigint_mul:nn #1#2
+  {
+    \@@_value_do:nn {#2}
+      { \@@_value_do:nn {#1} \@@_mul:nnnn }
+  }
+\cs_new:Npn \@@_mul:nnnn #1#2#3#4
+  {
+    \int_case:nnn { #1 * #3 }
+      {
+        { 1 } { \@@_mul:nw {#2} #4 ; }
+        { -1 } { \exp_last_unbraced:Nf - { \@@_mul:nw {#2} #4 ; } }
+      }
+      { 0 }
+  }
+\cs_new:Npn \@@_mul:nw #1#2
+  {
+    \exp_after:wN \@@_mul:wnw
+    \tex_romannumeral:D -`0 \@@_mul_digit:nN {#1} #2 ; {#1}
+  }
+\cs_new:Npn \@@_mul:wnw #1 ; #2 #3
+  {
+    \token_if_eq_charcode:NNTF #3 ;
+      {#1}
+      {
+        \exp_last_unbraced:Nf \@@_mul:wnw
+          {
+            \exp_after:wN \@@_add_signed:Nww \exp_after:wN +
+              \tex_romannumeral:D -`0 \@@_mul_digit:nN {#2} #3 ;
+              #1 0 ;
+            ;
+          }
+        {#2}
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP, aux]{\@@_mul_digit:nN}
+% \begin{macro}[EXP, aux]{\@@_mul_digit_digit:NN}
+%   The result of each integer expression certainly has~$2$ digits,
+%   thanks to the shift by~$9$ (well, with the carry from the level
+%   below, this shift is~$10$).  Specifically, every integer expression
+%   yields a result in~$[10,91]$.
+%    \begin{macrocode}
+\cs_new:Npn \@@_mul_digit:nN #1#2
+  {
+    \exp_after:wN \@@_add_after:N
+    \__int_value:w \__int_eval:w \c_minus_one +
+      \@@_mul_digit_digit:NN #2 #1 { ? \c_one \@@_add_end:w } \s__stop
+  }
+\cs_new:Npn \@@_mul_digit_digit:NN #1#2
+  {
+    \use_none:n #2
+    \exp_after:wN \use_ii_i:nn \exp_after:wN \__int_eval_end:
+    \__int_value:w \__int_eval:w
+      \c_nine + #1 * #2 + \@@_mul_digit_digit:NN #1
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsubsection{Long division}
+%
+% \begin{macro}[EXP]{\bigint_div_truncate:nn}
+% \begin{macro}[aux, EXP]{\@@_div_truncate:wwwnn}
+%    \begin{macrocode}
+\cs_new:Npn \bigint_div_truncate:nn #1#2
+  {
+    \@@_value_do:nn {#2}
+      { \@@_value_do:nn {#1} { \@@_div:nnnnN } }
+    \@@_div_truncate:wwwnn
+  }
+\cs_new:Npn \@@_div_truncate:wwwnn #1; #2; #3; #4 #5
+  {
+    \tl_if_empty:nTF {#1} { 0 }
+      { \int_compare:nNnF {#4} = {#5} { - } #1 }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP]{\bigint_mod:nn}
+% \begin{macro}[aux, EXP]{\@@_mod:wwwnn}
+%    \begin{macrocode}
+\cs_new:Npn \bigint_mod:nn #1#2
+  {
+    \@@_value_do:nn {#2}
+      { \@@_value_do:nn {#1} { \@@_div:nnnnN } }
+    \@@_mod:wwwnn
+  }
+\cs_new:Npn \@@_mod:wwwnn #1; #2; #3; #4 #5
+  {
+    \tl_if_empty:nTF {#2} { 0 }
+      { \int_compare:nNnF {#4} = \c_one { - } #2 }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP]{\bigint_div_round:nn}
+% \begin{macro}[aux, EXP]{\@@_div_round:wwwnn, \@@_div_round_aux:wn}
+%    \begin{macrocode}
+\cs_new:Npn \bigint_div_round:nn #1#2
+  {
+    \@@_value_do:nn {#2}
+      { \@@_value_do:nn {#1} { \@@_div:nnnnN } }
+    \@@_div_round:wwwnn
+  }
+\cs_new:Npn \@@_div_round:wwwnn #1; #2; #3; #4 #5
+  {
+    \int_compare:nNnTF
+      {
+        \exp_last_unbraced:Nf \@@_div_round_aux:wn
+          { \@@_add_signed:Nww - #2 ; #3 ; ; } {#2}
+      }
+      = \c_one
+      {
+        \tl_if_empty:nTF {#1}
+          { 0 }
+          { \int_compare:nNnF {#4} = {#5} { - } #1 }
+      }
+      {
+        \int_compare:nNnF {#4} = {#5} { \exp_after:wN - }
+        \tex_romannumeral:D -`0
+        \tl_if_empty:nTF {#1} { 1 } { \@@_add_signed:Nww + 1 ; #1 ; }
+      }
+  }
+\cs_new:Npn \@@_div_round_aux:wn #1 ; #2
+  { \@@_compare:nnnn { 1 } {#1} { 1 } {#2} }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[aux, EXP]
+%   {\@@_div:nnnnN, \@@_div:nnn, \@@_div:wwn, \@@_div:wnw, \@@_div_next:nnNw}
+%    \begin{macrocode}
+\cs_new:Npn \@@_div:nnnnN #1#2#3#4#5
+  {
+    \int_compare:nNnTF { #1 * #3 } = \c_zero
+      {
+        \int_compare:nNnT {#3} = \c_zero
+          {
+            \__msg_kernel_expandable_error:nnf
+              { bigint } { division-by-zero }
+              { \@@_to_decimal:nn {#1} {#2} }
+          }
+        0
+      }
+      {
+        \exp_after:wN #5 \tex_romannumeral:D -`0
+        \exp_args:Nf \@@_div:nnn { \tl_count:n {#4} } {#2} {#4}
+        {#1} {#3}
+      }
+  }
+\cs_new:Npn \@@_div:nnn #1#2#3
+  {
+    \use:nff \@@_div:wwn
+      { \str_range:nnn {#2} { 1 } {#1} ; }
+      { \str_range:nnn {#2} { #1 + 1 } { -1 } ; }
+      {#3}
+  }
+\cs_new:Npn \@@_div:wwn #1 ; #2 ; #3
+  {
+    \exp_after:wN \@@_add_after:N
+    \__int_value:w \__int_eval:w \c_zero
+      \@@_div:wnw #1 ; {#3} #2 ;
+  }
+\cs_new:Npn \@@_div:wnw #1 ; #2
+  {
+    \int_compare:nNnTF
+      { \@@_compare:nnnn { 1 } {#1} { 1 } {#2} } = \c_minus_one
+      { \@@_div_next:nnNw {#1} {#2} }
+      {
+        + \c_one
+        \exp_last_unbraced:Nf \@@_div:wnw
+          { \@@_add_signed:Nww - #2 ; #1 ; ; }
+          {#2}
+      }
+  }
+\cs_new:Npn \@@_div_next:nnNw #1#2#3
+  {
+    \token_if_eq_meaning:NNTF #3 ;
+      { ; #1 ; #2 ; }
+      {
+        \exp_after:wN \__int_eval_end:
+        \__int_value:w \__int_eval:w \c_zero
+          \exp_last_unbraced:Nf \@@_div:wnw
+            { \@@_add_after:N #1 #3 ; } {#2}
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Tools for parsing}
+%
+% \begin{macro}[EXP]{\bigint_split_from_tl:n}
+% \begin{macro}[EXP, aux]{\@@_split_from_tl:nn}
+%   Possibly useful if someone wants to implement expandable expression
+%   parsing.
+%    \begin{macrocode}
+\cs_new:Npn \bigint_split_from_tl:n #1
+  { \@@_read_do:nn {#1} { \@@_split_from_tl:nnn } }
+\cs_new:Npn \@@_split_from_tl:nnn #1#2
+  { { \@@_to_decimal:nn {#1} {#2} } }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsection{Viewing big integers}
+%
+% \begin{macro}{\bigint_show:N, \bigint_show:c}
+%   Copies of the tl functions.
+%    \begin{macrocode}
+\cs_new_eq:NN \bigint_show:N \tl_show:N
+\cs_new_eq:NN \bigint_show:c \tl_show:c
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\bigint_show:n}
+%   Feed the result of \cs{bigint_to_decimal:n} to \cs{tl_show:n}.
+%    \begin{macrocode}
+\cs_new_protected:Npn \bigint_show:n #1
+  { \exp_args:Nf \tl_show:n { \bigint_to_decimal:n {#1} } }
+%    \end{macrocode}
+% \end{macro}
+%
+% \subsection{Scratch big integers}
+%
+% \begin{variable}{\l_tmpa_bigint, \l_tmpb_bigint}
+% \begin{variable}{\g_tmpa_bigint, \g_tmpb_bigint}
+%    We provide two local and two global scratch variables.
+%    \begin{macrocode}
+\bigint_new:N \l_tmpa_bigint
+\bigint_new:N \l_tmpb_bigint
+\bigint_new:N \g_tmpa_bigint
+\bigint_new:N \g_tmpb_bigint
+%    \end{macrocode}
+% \end{variable}
+% \end{variable}
+%
+% \subsection{Factorization}
+%
+% \begin{macro}[EXP]{\bigint_factor:n}
+% \begin{macro}[EXP, aux]{\@@_factor:n, \@@_factor:w, \@@_factor:ww}
+%   This expands to the factorization of its argument, with each
+%   factor enclosed in braces, an item of the resulting token list.
+%   The factors appear in descending order.
+%   Negative integers have a trailing |{-1}| factor.
+%   Zero raises an error.
+%    \begin{macrocode}
+\cs_new:Npn \bigint_factor:n #1
+  { \@@_value_do:nn {#1} { \@@_factor:nn } }
+\cs_new:Npn \@@_factor:nn #1#2
+  {
+    \int_case:nnn {#1}
+      {
+        { 1 } { \@@_factor:w #2 ; }
+        { -1 } { \@@_factor:w #2 ; {-1} }
+      }
+      { \__msg_kernel_expandable_error:nn { bigint } { factor-zero } }
+  }
+\cs_new:Npn \@@_factor:w #1 ;
+  {
+    \bigint_if_even:nTF {#1}
+      {
+        \exp_last_unbraced:Nf \@@_factor:w
+          \bigint_div_round:nn {#1} {2} ;
+        {2}
+      }
+      {
+        \bigint_compare:nNnF {#1} = { 1 }
+          { \@@_factor:ww 3 ; #1 ; }
+      }
+  }
+\cs_new:Npn \@@_factor:ww #1 ; #2 ;
+  {
+    \bigint_compare:nNnTF
+      { \bigint_mul:nn {#1} {#1} } > { #2 }
+      { {#2} }
+      {
+        \bigint_compare:nNnTF
+          { \bigint_mod:nn {#2} {#1} } = { 0 }
+          {
+            \use:nff \@@_factor:ww
+              { #1 ; } { \bigint_div_truncate:nn {#2} {#1} ; }
+            {#1}
+          }
+          {
+            \exp_last_unbraced:Nf \@@_factor:ww
+              { \bigint_add:nn {#1} {2} ; } #2 ;
+          }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP]{\bigint_phi:n}
+% \begin{macro}[EXP, aux]{\@@_phi:, \@@_phi:nnw}
+%   Euler's totient function $\phi$.  Start with $1$, then multiply for
+%   each prime factor $p$ by $p$ or $p-1$ depending on whether the
+%   previous prime factor was also $p$.
+%    \begin{macrocode}
+\cs_new:Npn \bigint_phi:n #1
+  {
+    \exp_last_unbraced:Nf \@@_phi:
+      { \bigint_factor:n {#1} } {-1} ? \q_stop
+  }
+\cs_new:Npn \@@_phi: { \@@_phi:nnw { 1 } }
+\cs_new:Npn \@@_phi:nnw #1#2#3 \q_stop
+  {
+    \tl_if_head_eq_charcode:nNTF {#2} -
+      { 1 }
+      {
+        \bigint_mul:nn
+          {
+            \bigint_compare:nNnTF {#1} = {#2}
+              {#2} { \bigint_sub:nn {#2} {1} }
+          }
+          { \@@_phi:nnw {#2} #3 \q_stop }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP]{\bigint_count_divisors:n}
+% \begin{macro}[EXP, aux]{\@@_count_divisors:, \@@_count_divisors:nn}
+%   Number of divisors, obtained from the factorization. The auxiliary
+%   \cs{@@_count_divisors:nnnn} does most of the work: its first
+%   argument is th
+%    \begin{macrocode}
+\cs_new:Npn \bigint_count_divisors:n #1
+  {
+    \exp_last_unbraced:Nf \@@_count_divisors:
+      { \bigint_factor:n {#1} } { -1 } { -1 } \q_stop
+  }
+\cs_new:Npn \@@_count_divisors:
+  { \@@_count_divisors:nnnn { 2 } { 1 } }
+\cs_new:Npn \@@_count_divisors:nnnn #1#2#3#4
+  {
+    \str_if_eq:nnTF {#3} {-1} { \use_i_delimit_by_q_stop:nw {#2} }
+    \str_if_eq:nnTF {#4} {#3}
+      {
+        \exp_args:Nf \@@_count_divisors:nnnn
+          { \int_eval:n { 1 + #1 } } {#2} {#4}
+      }
+      {
+        \exp_args:NNf \@@_count_divisors:nnnn
+          2 { \bigint_mul:nn {#1} {#2} } {#4}
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsection{Euclid's algorithm}
+%
+% \begin{macro}[EXP]{\bigint_gcd:nn}
+% \begin{macro}[EXP, aux]{\@@_gcd:ww}
+%   First evaluate the expressions without their sign.  Then apply
+%   Euclid's algorithm: if an operand is $0$, we're done, otherwise
+%   compute |#2| modulo |#1| and recurse with that and |#1| as
+%   arguments.
+%    \begin{macrocode}
+\cs_new:Npn \bigint_gcd:nn #1#2
+  {
+    \use:nff \@@_gcd:ww
+      { \bigint_to_decimal:n {#1} ; }
+      { \bigint_to_decimal:n {#2} ; }
+  }
+\cs_new:Npn \@@_gcd:ww #1 ; #2 ;
+  {
+    \str_if_eq:nnTF {#1} { 0 }
+      {#2}
+      {
+        \exp_last_unbraced:Nf \@@_gcd:ww
+          \bigint_mod:nn {#2} {#1} ; #1 ;
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}[EXP]{\bigint_lcm:nn}
+% \begin{macro}[EXP, aux]{\@@_lcm:ww}
+%   Evaluate the two operands.  If either one is zero, this is the
+%   result.  Otherwise, compute $ab/\operatorname{gcd}(a,b)$, minimizing
+%   the operands by first computing $a/\operatorname{gcd}(a,b)$, an
+%   integer, then multiplying by $b$.
+%    \begin{macrocode}
+\cs_new:Npn \bigint_lcm:nn #1#2
+  {
+    \use:nff \@@_lcm:ww
+      { \bigint_to_decimal:n {#1} ; }
+      { \bigint_to_decimal:n {#2} ; }
+  }
+\cs_new:Npn \@@_lcm:ww #1 ; #2 ;
+  {
+    \str_if_eq:nnTF {#1} { 0 } { 0 }
+      {
+        \str_if_eq:nnTF {#2} { 0 } { 0 }
+          {
+            \bigint_mul:nn {#1}
+              { \bigint_div_truncate:nn {#2} { \@@_gcd:ww #1 ; #2 ; } }
+          }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \subsection{Messages}
+%
+%    \begin{macrocode}
+\__msg_kernel_new:nnn { bigint } { factor-zero } { Zero~cannot~be~factored. }
+\__msg_kernel_new:nnn { bigint } { division-by-zero }
+  { Division~of~#1~by~zero. }
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%</initex|package>
+%    \end{macrocode}
+%
+% \end{implementation}
+%
+% \PrintIndex

@@ -1,0 +1,335 @@
+% \iffalse
+%% File xo-capt.dtx (C) Copyright 1999-2000 Frank Mittelbach, David Carlisle, Chris Rowley
+%%                  (C) Copyright 2004-2009 Frank Mittelbach, LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3c of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the ``xor bundle'' (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/svnroot/experimental/trunk/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX Project Team.
+%%
+%% -----------------------------------------------------------------------
+%%
+\RequirePackage{l3bootstrap}
+\GetIdInfo $Id$
+          {xo-capt (part of xor)}
+\ProvidesExplPackage{\ExplFileName}
+  {\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+% \fi
+%
+%
+% \subsection{Modifying the caption command}
+%
+% \begin{macro}{\@caption}
+% |\caption| just saves its main argument in a token register. It also
+% has |\unskip| and |\ignorespaces| to cope with hmode.
+% The format of the token register is:\\
+% \marg{type}\marg{number}\marg{caption text}\marg{extra info}\\
+% The \meta{type} is something like `figure', used to generate the
+% relevant command names. \meta{number} is the fully expanded version of
+% |\the|\ldots. The last group is unused by the current definition
+% but extended packages may use it to pass extra information to the
+% float handler, as required.
+%    \begin{macrocode}
+\cs_set_nopar:Npn \caption {\@dblarg{\@caption\l_xor_curr_float_type_tl}}
+
+\cs_set:Npn \@caption #1[#2]#3 {%
+  \unskip
+%    \end{macrocode}
+%    We use the old \LaTeX{} interface with |\addcontentsline| for the
+%    moment.\footnote{FIX!!}
+%    \begin{macrocode}
+  \addcontentsline{\csname g_xor_type_ #1  _extension_tl\endcsname}{#1}
+%    \end{macrocode}
+%    The counter used is not |#1| but given by (|\foat@counter|) which
+%    should perhaps be passed along but isn't:
+%    \begin{macrocode}
+    {\protect\numberline{\csname the\float@counter\endcsname}
+    {\ignorespaces #2}}
+  \global\toks \g_xor_curr_float_box_tl {#3}
+  \ignorespaces
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \subsection{Adding captions to float boxes}
+%
+% \begin{macro}{\g_xor_this_captioned_float_box}
+%    \begin{macrocode}
+\box_new:N\g_xor_this_captioned_float_box
+%    \end{macrocode}
+% \end{macro}
+%
+% This should really be a template instance.
+% Must \emph{copy} the float body in |\g_xor_this_float_box_tl|
+% into |\g_xor_this_captioned_float_box| adding the caption text.
+% May use |\g_xor_this_area_name_tl|, |\g_xor_this_area_col_tl| and other information, to be
+% determined \ldots
+%
+% \begin{macro}{\xor_append_caption_to_float:}
+%    Combine float body and caption of the current float (``this
+%    float'') and store it in |\g_xor_this_captioned_float_box|.
+%
+% This should really be a template instance.
+%
+% May use |\g_xor_this_area_name_tl|, |\g_xor_this_area_col_tl| and other information,
+% to be determined \ldots even |\this@caption@action|.
+%
+%    \begin{macrocode}
+\cs_new_nopar:Npn \xor_append_caption_to_float:{
+  \xor_typeset_some_floatbox:nnnnnnn
+      \g_xor_this_type_tl
+      \g_xor_this_area_name_tl
+      \g_xor_this_float_box_tl 
+      {\csname  g_xor_type_
+                 \g_xor_this_type_tl
+                _caption_tl  \endcsname}
+      \g_xor_this_display_cnt_tl
+      \g_xor_this_caption_tl
+      \g_xor_this_span_num_tl
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\xor_append_here_caption_to_float:}
+%    Combine float body and caption of the current here float and
+%    store it in |\g_xor_this_captioned_float_box|.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \xor_append_here_caption_to_float:{
+  \xor_typeset_some_floatbox:nnnnnnn
+      \g_xor_here_type_tl
+      {h \int_use:N\g_xor_curr_col_int 1}
+      \g_xor_here_float_box_tl
+      {\csname  g_xor_type_
+                 \g_xor_here_type_tl
+                _caption_tl  \endcsname}
+      \g_xor_here_display_cnt_tl
+      \g_xor_here_caption_tl
+      \g_xor_here_span_num_tl
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \begin{macro}{\xor_typeset_this_float_and_caption:}
+%    Combine float body and caption of the current float (``this
+%    float'') and output it into the current list.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \xor_typeset_this_float_and_caption:{
+  \xor_append_caption_to_float:
+  \box_use_clear:N\g_xor_this_captioned_float_box
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \section{Some primitive templates for testing}
+%
+% prove of concept only --- not even prototype
+%
+%
+% \begin{macro}{\xor_typeset_some_floatbox:nnnnnnn}
+%    The macro |\xor_typeset_some_floatbox:nnnnnnn| take 7 arguments as follows:
+%    \begin{description}
+%    \item[type] type of the float to be typeset
+%    \item[area] area in which to format the float
+%    \item[floatbody box] box register in which the body of the float
+%       is stored
+%    \item[caption heading] fixed text like ``Figure''
+%    \item[caption number] caption number of the float
+%    \item[caption text] caption text of the float
+%    \item[span count] span count (normally deducible from the area
+%    but\ldots
+%    \end{description}
+%    The first two arguments are used to decide which formatting
+%    instance to call, the remaining arguments are passed to that
+%    instance.
+%
+%    The logic is (at the moment) as follows: if a template instance
+%    (type \texttt{buildfloat}) with the name
+%    \meta{type}|-|\meta{area}\footnote{The ``here'' areas are
+%    denoted as \texttt{h}\meta{col}\texttt{1}.}
+%    is defined then this instance is used,
+%    otherwise we look if there is an instance with just the name of
+%    the \meta{area}, otherwise we try an instance with the name
+%    \meta{type} and if this isn't defined either we try the instance
+%    named |default|.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \xor_typeset_some_floatbox:nnnnnnn #1#2 { % type area
+
+  \IfInstanceExistTF{buildfloat}
+                     { #1 - #2 }
+    {\cs_set_nopar:Npn \use@instance@named{#1 - #2}}
+    {
+      \IfInstanceExistTF{buildfloat}
+                         { #2 }
+        {\cs_set_nopar:Npn \use@instance@named{#2}}
+        {
+        \IfInstanceExistTF{buildfloat}
+                           { #1 }
+          {\cs_set_eq:NN     \use@instance@named #1 }   % we know this is a token
+          {\cs_set_nopar:Npn \use@instance@named{default}}
+        }
+    }
+  \UseInstance{buildfloat}\use@instance@named
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%    \begin{macrocode}
+% #1 body box
+% #2 fixed text
+% #3 counter value
+% #4 caption
+% #5 span number
+\DeclareObjectType{buildfloat}{5}
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\DeclareTemplateInterface{buildfloat}{centeredabove}{5}
+ {
+   body-caption-sep : skip = 10pt ,
+ }
+
+\DeclareTemplateCode{buildfloat}{centeredabove}{5}
+ {
+   body-caption-sep = \belowcaptionskip,
+ }
+ {
+  \AssignTemplateKeys
+%    \end{macrocode}
+%    When typesetting the caption we need full control over the environment as
+%    this may be called at arbitrary times when the output routine gets
+%    control. Initially I missed out the font reset with the result that some
+%    captions suddenly showed up with typewriter fonts.
+%    \begin{macrocode}
+  \reset@font
+  \normalsize
+  \@parboxrestore
+
+  \hsize=#5\columnwidth
+
+  \vbox_gset:Nn \g_xor_this_captioned_float_box
+    {
+     \sbox\l_tmpb_box{#2~ #3:~ #4}
+     \dim_compare:nNnTF {\box_wd:N \l_tmpb_box} >\hsize
+     { #2~ #3:~ #4\par }
+     { \hbox_to_wd:nn \hsize {\hfil\box_use_clear:N\l_tmpb_box\hfil} }
+     \vskip\belowcaptionskip
+     \centerline{ \box_use:N#1 }
+     \kern\c_zero_skip
+    }
+ }
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\DeclareTemplateInterface{buildfloat}{centeredbelow}{5}
+ {
+   body-caption-sep : skip = 10pt ,
+ }
+
+\DeclareTemplateCode{buildfloat}{centeredbelow}{5}
+ {
+   body-caption-sep = \belowcaptionskip,
+ }
+ {
+  \AssignTemplateKeys
+
+  \@parboxrestore
+
+  \hsize=#5\columnwidth
+
+  \vbox_gset:Nn \g_xor_this_captioned_float_box
+    {
+      \centerline{\box_use:N#1}
+      \vskip\abovecaptionskip
+      \sbox\l_tmpb_box{#2~ #3:~ #4}
+      \dim_compare:nNnTF {\box_wd:N \l_tmpb_box} >\hsize
+      { #2~ #3:~ #4\par }
+      { \hbox_to_wd:nn \hsize {\hfil\box_use_clear:N\l_tmpb_box \hfil} }
+    }
+ }
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\DeclareTemplateInterface{buildfloat}{bottomright}{5}
+ {
+   body-caption-sep : skip = 10pt ,
+ }
+
+\DeclareTemplateCode{buildfloat}{bottomright}{5}
+ {
+   body-caption-sep = \belowcaptionskip,
+ }
+ {
+  \AssignTemplateKeys
+
+  \@parboxrestore
+
+  \hsize=#5\columnwidth
+
+  \vbox_gset:Nn \g_xor_this_captioned_float_box
+    {
+     \@@line{\hss\vbox{\box_use:N#1\kern0pt}
+       \rlap{
+   \hskip\abovecaptionskip
+%    \end{macrocode}
+%    rubbish as far as it goes: this should be turned into a real
+%    template probably using coffins
+%    \begin{macrocode}
+        \parbox[b]{\marginparwidth
+                   +(#5\columnwidth-\box_wd:N#1)/2}{
+           \raggedright
+           #2~ #3:~ #4
+        }
+      }\hss
+    }
+    \kern0pt
+  }
+ }
+%    \end{macrocode}
+%
+%
+%
+% \subsection{Some test instances}
+%
+%    \begin{macrocode}
+\DeclareInstance{buildfloat}{default}{centeredabove}{}
+
+\DeclareInstance{buildfloat}{figure}{centeredbelow}{}
+
+\DeclareInstance{buildfloat}{t31}{bottomright}{}
+\DeclareInstance{buildfloat}{t22}{bottomright}{}
+\DeclareInstance{buildfloat}{t13}{bottomright}{}
+%    \end{macrocode}
+%
+% \endinput
+\endinput

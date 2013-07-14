@@ -1,0 +1,215 @@
+% \iffalse
+%% File xfm-test.tex
+%% (C) Copyright 2001, 2004 Frank Mittelbach, LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3a of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the ``xfrontm bundle'' (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/cgi-bin/cvsweb.cgi/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX Project Team.
+%%
+%% -----------------------------------------------------------------------
+%%
+%
+%$Id$
+%
+% \fi
+%
+
+\expandafter\ifx\csname userinput\endcsname\relax
+  \typeout{************************************************}
+  \typeout{*}
+  \typeout{* Select one of the sample layouts for testing:}
+  \typeout{*}
+  \typeout{* 1) plain}
+  \typeout{* 2) AIP}
+  \typeout{* 3) ARLO}
+  \typeout{* 4) TUB}
+  \typeout{* 5) Wiley}
+  \typeout{*}
+  \typeout{************************************************}
+  \typeout{}
+  \typein[\userinput]{Type in a number 1-5}
+\fi
+
+\setbox0\hbox{\global\count1=0\userinput}
+
+\ifcase \count1\relax
+  \typeout{Type a proper number between 1 and 5 ... byebye}
+  \expandafter\stop
+\or
+  \documentclass{xfm-plain}
+\or
+  \documentclass{xfm-aip}
+\or
+  \documentclass{xfm-arlo}
+\or
+  \documentclass{xfm-tub}
+\or
+  \documentclass{xfm-wiley}
+\else
+  \typeout{Type a proper number  between 1 and 5 ... byebye}
+  \expandafter\stop
+\fi
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% XFM debugging                                                     %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% disable tracing:
+%
+\let\XFMShowAreas\relax
+\def\show#1{}
+
+%\traceon
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TEST DATA
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand\sample{%
+ Infandum, regina, iubes renovare dolorem, Troianas ut opes et
+ lamen\-ta\-bile regnum cruerint Danai; quaeque ipse miserrima vidi, et
+ quorum pars magna fui. Quis talia fando Myrmidonum Dolopumve aut duri
+ miles Ulixi temperet a lacrimis? \smallsample
+}
+
+\newcommand\smallsample{%
+ Et iam nox umida caelo praecipitat,
+ suadentque cadentia sidera somnos.
+ Sed si tantus amor casus cognoscere
+ nostros et breviter Troiae supremum audire laborem, quamquam animus
+ meminisse horret, luctuque refugit, incipiam.
+}
+
+
+\articleinfo
+{
+  title      = {A Test Document},
+  shorttitle = {Test Doc},
+  subtitle   = {Testing the xfm\thanks{Version xvz} package},
+  thanks     = {A test},
+  abstract   = {\sample Some text for
+%                \traceon
+                thanks.\thanks{A thanks in the
+                                                     abstract.}
+%                \traceoff \x
+                \csname par\endcsname       % <--- surely not like
+                                            %      this :-)
+                \smallsample},
+}
+
+\authorinfo
+ {
+  name=Frank Mittelbach,
+  address={Zedernweg 62, 55128 Mainz, Germany},
+  altaddress={EDS, Eisenstra\ss e 58, 65428 R\"usselsheim, Germany},
+  email={frank.mittelbach@latex-project.org},
+  homepage={www.latex-project.org},
+  thanks={foo},
+  picture={frank},
+  biography={\smallsample},
+ }
+
+
+\authorinfo
+ {
+  name={Arno Mittelbach},
+  address={Zedernweg 62, 55128 Mainz, Germany},
+  email={arno@mittelbach-online.de},
+  homepage={www.mittelbach-online.de},
+  picture={arno},
+  biography={\smallsample},
+ }
+\authorinfo
+ {
+  name={Christel Mittelbach},
+  address={Zedernweg 62, 55128 Mainz, Germany},
+  altaddress={AEB, Stuttgart, Germany},
+  email={christel@mittelbach-online.de},
+  homepage={www.mittelbach-online.de},
+  picture={christel},
+  biography={\smallsample},
+ }
+\authorinfo
+ {
+  name={Burkhard Mittelbach},
+  address={Zedernweg 62, 55128 Mainz, Germany},
+  altaddress={Kindergarten, Holunderweg, Mainz, Germany},
+  picture={burkhard},
+  biography={\smallsample},
+ }
+\authorinfo
+ {
+  name={Holger Mittelbach},
+  address={Zedernweg 62, 55128 Mainz, Germany},
+  altaddress={Kindergarten, Holunderweg, Mainz, Germany},
+  picture={holger},
+  biography={\smallsample},
+ }
+\authorinfo
+ {
+  name={Dr.~Bernd Mittelbach},
+  title={Dr.},
+  address={Dreieichstra\ss e 31, K\"oppern, Germany},
+  picture={bernd},
+  biography={\smallsample},
+ }
+
+\authorinfo
+ {
+  name={Gisela Mittelbach},
+  address={Dreieichstra\ss e 31, K\"oppern, Germany},
+  picture={gisela},
+  biography={\smallsample},
+ }
+
+\usepackage{trace}
+\begin{document}
+
+
+%\traceon
+\maketitle
+
+\section{Introduction}
+
+\sample
+
+\subsection{A subsection}
+
+\smallsample
+
+\sample
+
+\end{document}
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

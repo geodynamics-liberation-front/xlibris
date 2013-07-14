@@ -1,0 +1,44 @@
+%
+% Copyright (C) 2011,2012 The LaTeX3 Project
+%
+
+\documentclass{minimal}
+\input{regression-test}
+
+\RequirePackage[check-declarations,log-functions]{expl3}
+
+
+\begin{document}
+
+\START
+\AUTHOR{LaTeX3 Project}
+\ExplSyntaxOn
+
+\TESTEXP { Dimension~expressions~with~potentially~no~units }
+  {
+    \__dim_strip_pt:n { 1 pt } \NEWLINE
+    \__dim_strip_pt:n { 1 bp } \NEWLINE
+    \__dim_strip_pt:n { 3 pt + 4 pt } \NEWLINE
+    \__dim_strip_pt:n { 4 pt pt } \NEWLINE
+  }
+
+\TEST { Setting~a~dimension~if~smaller/bigger }
+  {
+    \dim_zero:N \l_tmpa_dim
+    \dim_set:Nn \l_tmpa_dim { \dim_min:nn \l_tmpa_dim { 1pt } }
+      \TYPE { \dim_use:N \l_tmpa_dim }
+    \dim_zero:N \l_tmpa_dim
+    \dim_set:Nn \l_tmpa_dim { \dim_max:nn \l_tmpa_dim { 1pt } }
+      \TYPE { \dim_use:N \l_tmpa_dim }
+    \dim_zero:N \l_tmpa_dim
+    \dim_set:Nn \l_tmpa_dim { \dim_max:nn \l_tmpa_dim { -1pt } }
+      \TYPE { \dim_use:N \l_tmpa_dim }
+    \dim_zero:N \l_tmpa_dim
+    \dim_set:Nn \l_tmpa_dim { \dim_min:nn \l_tmpa_dim { -1pt } }
+      \TYPE { \dim_use:N \l_tmpa_dim }
+  }
+
+\END
+
+
+

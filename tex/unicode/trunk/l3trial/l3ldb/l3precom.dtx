@@ -1,0 +1,357 @@
+% \iffalse meta-comment
+%
+%% File: l3precom.dtx Copyright (C) 2012 The LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3c of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the "l3trial bundle" (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/svnroot/experimental/trunk/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX3 Project.
+%%
+%% -----------------------------------------------------------------------
+%
+%<*driver|package>
+\RequirePackage{expl3}
+\GetIdInfo$Id: l3precom.dtx 4482 2013-04-24 21:05:12Z joseph $
+  {L3 Experimental Precompilation of Functions}
+%</driver|package>
+%<*driver>
+\documentclass[full]{l3doc}
+\usepackage{amsmath}
+\begin{document}
+  \DocInput{\jobname.dtx}
+\end{document}
+%</driver>
+% \fi
+%
+% \title{^^A
+%   The \textsf{l3precom} package: precompiling functions^^A
+%   \thanks{This file describes v\ExplFileVersion,
+%     last revised \ExplFileDate.}^^A
+% }
+%
+% \author{^^A
+%  The \LaTeX3 Project\thanks
+%    {^^A
+%      E-mail:
+%        \href{mailto:latex-team@latex-project.org}
+%          {latex-team@latex-project.org}^^A
+%    }^^A
+% }
+%
+% \date{Released \ExplFileDate}
+%
+% \maketitle
+%
+% \begin{documentation}
+%
+% \section{\pkg{l3precom} documentation}
+%
+% It might speed up the processing of documents when certain parts of
+% the document style file are `precompiled' and stored in a separate
+% file. How much of this is still useful these days is open to some
+% experiments I guess. If a large number of LDB settings are being used
+% then perhaps this will indeed safe some considerable time as all the
+% parsing isn't necessary (some initial test show 1 second extra user
+% time per 1000 additional LDB entries).
+%
+% I've largely added it to have \cs{dumpLaTeXstate} available while
+% debugging the LDB pointer structure.
+%
+% \end{documentation}
+%
+% \begin{implementation}
+%
+% \section{\pkg{l3precom} implementation}
+%
+%    \begin{macrocode}
+%<*package>
+\RequirePackage{expl3}
+\ProvidesExplPackage
+  {\ExplFileName}{\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\tex_message:D { LaTeX:~ precompiling~ code, }
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%<*precompile>
+%    \end{macrocode}
+%
+% \begin{variable}{\c_cs_dump_iow}
+%   We need to allocate an output stream for the dump in order to be
+%   able to write the precompiled code out.
+%    \begin{macrocode}
+\iow_new:N \c_cs_dump_iow
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\g_cs_dump_name_tl}
+%   This \meta{tl} is used to store the name of the file.
+%    \begin{macrocode}
+\tl_new:N  \g_cs_dump_name_tl
+\tl_set:Nn \g_cs_dump_name_tl { \c_job_name_tl -default.dmp }
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\g_cs_dump_seq}
+%   While processing the document class we build up a list of
+%   control sequence names to be dumped. For this purpose
+%   we use the |\g_cs_dump_seq| sequence.
+%    \begin{macrocode}
+\seq_new:N \g_cs_dump_seq
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{macro}{\cs_record_name:N, \cs_record_name:c}
+%   These functions mark a control sequence for dumping into a
+%   precompiled class.  When the \textsf{trace} `module' is included in
+%   the code we also write information about the control sequence into a
+%   |.dmp| file.
+%    \begin{macrocode}
+\cs_new_protected:Npn \cs_record_name:N #1
+  {
+    \seq_gput_left:Nn \g_cs_dump_seq {#1}
+%<trace>    \seq_gput_left:Nn \g_cs_trace_seq {#1}
+  }
+\cs_generate_variant:Nn \cs_record_name:N { c }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\cs_dump:}
+%   When a document styleclass calls \cs{cs_dump:} it triggers this code
+%   to write all the precompilation information out to a file.
+%
+%   Before dumping, we write a message to the terminal informing the
+%   \enquote{user} of this fact.
+%    \begin{macrocode}
+\cs_new_protected_nopar:Npn \cs_dump:
+  {
+    \iow_term:x { Precompiling~class~into~(\g_cs_dump_name_tl) }
+    \iow_open:Nn \c_cs_dump_iow { \g_cs_dump_name_tl }
+%    \end{macrocode}
+%   The first thing we write on a `dump' file is a command that allows
+%   us to use |*| in control sequences. We also need to be able to write
+%   to (and read from) the file internal control sequences, containing
+%   |_| and |:|.
+%    \begin{macrocode}
+    \iow_now:Nn \c_cs_dump_iow
+      {
+        \group_begin:
+          \char_set_catcode_letter:N \*
+          \ExplSyntaxOn
+      }
+%    \end{macrocode}
+%   We use a direct |\cs_gset:Npn| to disable any type of local/global
+%   check on the pointers.
+%
+%   Such dumping should probably ensure that the line length is not going
+%   to be too long or else it may not be possible to read such a file
+%   back in (not done).
+%
+%   One other thing: dumping of the LDB doesn't work of course because
+%   dumping of property lists doesn't work (in all cases) as the keys
+%   these days are specially handled and become strings.
+%    \begin{macrocode}
+    \seq_map_inline:Nn \g_cs_dump_seq
+      {
+        \tex_message:D {.}
+        \iow_now:Nx \c_cs_dump_iow
+          {
+            \token_to_str:N \cs_gset:Npn
+            \token_to_str:N ##1
+              { \tl_to_str:N ##1 }
+          }
+      }
+    \iow_now:Nn \c_cs_dump_iow { \group_end: }
+    \iow_close:N \c_cs_dump_iow
+    \tex_message:D { ~ finished }
+  }
+%</precompile>
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\cs_load_dump:n}
+%   A function to read a precompiled file into memory and skip until a
+%   \cs{cs_dump:} command is found. If no such file is found, processing
+%   continues and a subsequent \cs{cs_dump:} command will then create
+%   the dump file.
+%    \begin{macrocode}
+\cs_new_protected:Npn \cs_load_dump:n #1
+  {
+    \file_if_exist:nTF { #1.cmp }
+      {
+        \iow_term:x { Loading~ precompiled~ format~ in~ #1.cmp ~... }
+        \file_input:n { #1.cmp }
+        \cs_set_eq:NN \cs_dump: \fi:
+        \if_false:
+      }
+%<precompile>      { \tl_gset:Nn \g_cs_dump_name_tl { #1.cmp } }
+%<-precompile>      { \tex_errmessage:D { Cannot~ dump~ with~ this~ format } }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{variable}{\g_gen_sym_int, \g_ggen_sym_int}
+%    Two counters to make up new local or global \textsl{short} names
+%    in pointer structures like the \textsc{ldb}.
+%    \begin{macrocode}
+\int_new:N   \g_gen_sym_int
+\int_new:N   \g_ggen_sym_int
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{macro}{\cs_gen_sym:N, \cs_ggen_sym:N}
+%   We need to be able to generate control sequences on the fly.  They
+%   will exist of a prefix, either |l*| or |g*|, followed by the value
+%   of the counter \cs{g_gen_sym_int} (\cs{g_ggen_sym_int}) in roman
+%   numeral representation. The generated control sequence is locally
+%   stored in the token that was passed in |#1|.
+%
+%    \begin{macrocode}
+\cs_new_protected:Npn \cs_gen_sym:N #1
+  {
+    \int_gincr:N \g_gen_sym_int
+    \tl_set:Nx #1 { \exp_not:c { l*\int_to_roman:n \g_gen_sym_int } }
+%<precompile>    \exp_after:wN \cs_record_name:N #1
+%    \end{macrocode}
+%   We still want to define the initial value for the new symbol
+%   globally to make sure that during compilation something is written
+%   to the output file.
+%    \begin{macrocode}
+    \exp_after:wN \tl_clear_new:N #1
+  }
+%    \end{macrocode}
+%   The global variant %^^A todo: why so different?
+%    \begin{macrocode}
+\cs_new_protected:Npn \cs_ggen_sym:N #1
+  {
+%<trace>    \trace_ldb_internal:x { \exp_not:n { \cs_ggen_sym:N { #1 } } }
+    \int_gincr:N \g_ggen_sym_int
+    \tl_set:Nx #1 { \exp_not:c { g*\__int_to_roman:w \g_ggen_sym_int } }
+%<trace>    \trace_ldb_internal:x { \token_to_meaning:N #1 ~ ... ~ allocated }
+%<precompile>    \exp_after:wN \cs_record_name:N #1
+    \exp_after:wN \tl_clear_new:N #1
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\cs_ggen_prop:N}
+%   We really need to allocate property lists these days for nodes of
+%   the LDB.
+%    \begin{macrocode}
+\cs_new_protected:Npn \cs_ggen_prop:N #1
+  {
+    \cs_ggen_sym:N #1
+    \exp_after:wN \prop_clear:N #1
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \subsection{Dumping data structure states for tracing}
+%
+% \begin{variable}{\g_cs_trace_seq}
+%   A sequence which holds the control sequence names that are to be
+%   dumped. They are stored together with their meaning.
+%    \begin{macrocode}
+%<*trace>
+\seq_new:N \g_cs_trace_seq
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{variable}{\g_register_trace_seq}
+%   Sequence holding the register names to be dumped with their
+%   corresponding values.
+%    \begin{macrocode}
+\seq_new:N \g_register_trace_seq
+%    \end{macrocode}
+% \end{variable}
+%
+% \begin{macro}{\cs_record_meaning:N}
+%   Function marking a control sequence for dumping with meaning.
+%    \begin{macrocode}
+\cs_new_protected:Npn \cs_record_meaning:N #1
+  { \seq_gput_left:Nn \g_cs_trace_seq {#1} }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\register_record_name:N}
+%   Function marking a register for dumping with value.
+%    \begin{macrocode}
+\cs_new_protected:Npn \register_record_name:N #1
+  { \seq_gput_left:Nn \g_register_trace_seq {#1} }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\dumpLaTeXstate}
+%   The function \cs{dumpLaTeXstate} is used to write control sequences
+%   and registers, together with their meaning or value in the |.dmp|
+%   file. We write informational messages to the terminal during the
+%   dump.
+%    \begin{macrocode}
+\cs_new_protected:Npn \dumpLaTeXstate #1
+  {
+    \iow_term:x { Dumping~commands~into~(#1.dmp) }
+    \iow_open:Nn \c_cs_dump_iow { #1.dmp }
+    \tex_message:D { ~ commands }
+    \seq_map_inline:Nn \g_cs_trace_seq
+      {
+        \tex_message:D {.}
+        \iow_now:Nx \c_cs_dump_iow
+          {
+            \token_to_str:N ##1~
+            \token_to_meaning:N ##1
+          }
+      }
+    \tex_message:D { ~ registers }
+    \seq_map_inline:Nn \g_register_trace_seq
+      {
+        \tex_message:D {.}
+        \iow_now:Nx \c_cs_dump_iow
+          {
+            \token_to_str:N ##1
+            \tex_the:D ##1
+          }
+      }
+    \tex_message:D { ~ finished }
+    \iow_close:N \c_cs_dump_iow
+  }
+%</trace>
+%    \end{macrocode}
+% \end{macro}
+%
+%    \begin{macrocode}
+%</package>
+%    \end{macrocode}
+%
+% \end{implementation}
+%
+% \endinput

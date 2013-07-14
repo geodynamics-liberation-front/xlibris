@@ -1,0 +1,162 @@
+% \iffalse
+%%  File xo-flowchart.dtx
+%% (C) Copyright 1999-2007 Frank Mittelbach, LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3c of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the ``xor bundle'' (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/svnroot/experimental/trunk/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX Project Team.
+%%
+%% -----------------------------------------------------------------------
+%%
+%
+% $Id$
+%
+% \fi
+
+\begin{footnotesize}
+\begin{verbatim}
+          (1)
+           |
+           V
+   \xor_collect_setup:
+           |
+           V
+  New OR: \xor_OR_collect:
+           |
+           V
+\xor_trial_place_float_setup:
+
+
+
+    \xor_trial_place_float_setup:
+           |
+           V
+(2)--> \xor_trial_place_float_loop:
+           |
+           V
+       \xor_trial_place_float_inner_loop:
+           |
+           V
+   <current float successfully placed in previous trial?>
+      |                                     |
+     no                                    yes
+      |                                     |
+      |                                     |
+      |                                     V
+      |                              \xor_try_next_float:  <----------------
+      |                                     |                              |
+      |                                     |                              |
+      |                    <\g_xor_floats_active_seq empty?>               |
+      |                             |               |                      |
+      |                            no              yes                     |
+      |                             |               |                      |
+      |                             |               V                      |
+      |                          (get it) \xor_floats_active_seq_if_empty_action:
+      |                             |       (= \xor_OR_best_cols_setup:)   |
+      -------------v----------------                                       |
+                   |                                                       |
+                   |                                                       |
+   -----> \select@and@test@next@area                                       |
+   |               |                                                       |
+   |               |                                                       |
+   |  <still open areas for current float type?>                           |
+   |         |                |                                            |
+   |        yes               no---------------(defer float)----------------
+   |         |                                                             |
+   |  (do some tests and perhaps                                           |
+   |    close area this way)                                               |
+   |         |                                                             |
+   |  <float allowed on this page/column (according to tests)?>            |
+   |         |                |                                            |
+   |        yes               no---------------(defer float)----------------
+   |         |
+   |   <current area got closed by any test?>
+   |      |                 |
+   |     yes                no
+   |      |                 |
+   --------                 V
+                 \xor_pretests_success_action: (\setup@grabcolumn@or)
+
+
+
+
+      \setup@grabcolumn@or
+             |
+             V
+ \xor_OR_trial_grab_next_col_setup: <--------
+             |                    |
+             V                    |
+         New OR: \grabcolumn@or   |
+             |                    |
+             |                    |
+        <all cols produced?>      |
+           |         |            |
+          yes        no------------
+           |
+   (store results of trial)
+           |
+           V
+    \xor_OR_cleanup_setup:
+           |
+           V
+    New OR: \xor_OR_cleanup:
+           |
+           V
+ <special outputpenalty reached?> --> (reenter 2)
+
+
+
+      \xor_OR_best_cols_setup:
+             |
+             V
+      \xor_OR_best_next_col_setup: <-------
+            |                  |
+            V                  |
+      New OR: \xor_OR_grab_best_cols:  |
+            |                  |
+       <all cols produced?>    |
+          |         |          |
+         yes        no----------
+          |
+ (produce final page)
+          |
+          V
+  \xor_next_page_setup:
+          |
+          V
+ (try to make float pages)
+          |
+          V
+  \xor_collect_setup: (reenter 1)
+
+
+
+\end{verbatim}
+\end{footnotesize}
+
+\endinput

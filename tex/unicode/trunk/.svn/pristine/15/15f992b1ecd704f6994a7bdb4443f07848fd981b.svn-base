@@ -1,0 +1,1354 @@
+% \iffalse
+%% File xlang.dtx
+%% (C) Copyright 1999, 2004, 2005, 2009 Frank Mittelbach, LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3a of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the ``xlang bundle'' (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/cgi-bin/cvsweb.cgi/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX Project Team.
+%%
+%% -----------------------------------------------------------------------
+%%
+\RequirePackage{expl3}
+\GetIdInfo$Id$
+          {Experimental language package}
+%<package>\ProvidesExplPackage
+%<package>  {\filename}{\filedate}{\fileversion}{\filedescription}
+%<*german>
+\ProvidesFile{\filename.\filenameext}
+  [\filedate\space v\fileversion\space\filedescription]
+%</german>
+%
+%<*driver>
+ \documentclass{ltxguide}
+%
+ \catcode`\|=12
+ \usepackage{doc}
+%
+ \CodelineIndex
+ \setcounter{IndexColumns}{2}
+%
+ \catcode`\|=\active
+ \catcode`\<=\active
+ \catcode`\>=\active
+ \catcode`\_=11
+ \catcode`\:=11
+%
+%
+ \begin{document}
+ \DocInput{xlang.dtx}
+ \end{document}
+%</driver>
+%
+% \fi
+%
+%
+% \GetFileInfo{xlang.dtx}
+%
+% \title{Language Information in
+%         Structured Documents:
+%         The \textsf{xlang} package\thanks{This file
+%         has version number \fileversion, last
+%         revised \filedate.}}
+% \author{FMi}
+% \date{\filedate}
+%
+%  \maketitle
+%
+% \tableofcontents
+%
+% \DoNotIndex{\@@,\@auxout,\@currenvir,\@eha,\@empty,\@endpefalse,\@gobble}
+% \DoNotIndex{\@ignorefalse,\@latex@error,\@nil,\@writefile}
+% \DoNotIndex{\csname}
+% \DoNotIndex{\def}
+% \DoNotIndex{\edef,\else,\endcsname\endgroup,\endinput,\errmessage,\expandafter}
+% \DoNotIndex{\fi}
+% \DoNotIndex{\glossary}
+% \DoNotIndex{\ifx,IgnoreWhiteSpace}
+% \DoNotIndex{\index}
+% \DoNotIndex{\label,\cs_set_eq:NN ,\long}
+% \DoNotIndex{\meaning}
+% \DoNotIndex{\newcommand,\noexpand}
+% \DoNotIndex{\on@line}
+% \DoNotIndex{\par}
+% \DoNotIndex{\protect,\protected@write}
+% \DoNotIndex{\relax,\reserved@a,\RequirePackage}
+% \DoNotIndex{\string}
+% \DoNotIndex{\thepage}
+%
+%
+% \section{Introduction}
+%
+%    This package implements the concepts described in ``Language
+%    Information in Structured Documents: A Model for Mark-Up and
+%    Rendering'' \cite{?}. There are a few changes compared to the
+%    model described in the above paper. These are documented below.
+%
+% \subsection{The Preamble Interface}
+%
+%    \begin{decl}
+%    |\DeclareDocumentLanguages| \arg{language-list}
+%    \end{decl}
+%
+%    Lists all languages that are used in the document (any other
+%    language will then generate an error message if it appears in a
+%    language change command or environment).\footnote{Instead of
+%    enforcing the use of such a command one could determine the used
+%    languages when parsing the document for the first time but this
+%    will result in some time and space penalty which is probably
+%    better avoided.} On a higher level this could be specified via
+%    the option names to the language package.
+%
+%    -- produces, or adds to, the |\usedlanguages| list.
+%
+%
+%
+%    \begin{decl}
+%    |\SetDocumentLanguage| \arg{language}
+%    \end{decl}
+%
+%    Declares <language> to be the document language (i.e. the overall
+%    language of the document). It will also set the base language to
+%    use at the start of the body of the document.  Again this can
+%    also be set by making the last option to the language package
+%    become the base language. If no such declaration is given the
+%    ``document language'' defaults to ``english''.
+%
+%
+%
+% \subsection{The Document Interface}
+%
+%    In a document, language information is encoded (tagged) using
+%    the constructs with the following characteristics:
+%    \begin{itemize}
+%    \item
+%      A base-language change command with the language-label as
+%      argument.  This command is declarative to highlight the flat
+%      structure of base languages.
+%
+%    \item
+%      A language-environment with the language-label as argument and text
+%      as body.  The environment starts a new paragraph to enforce the block
+%      level nature.
+%
+%    \item
+%      A language-command with the language-label and text both as
+%      arguments. In contrast to the environment, this command applies
+%      language related actions to its second argument, which cannot
+%      directly contain full paragraphs.
+%    \end{itemize}
+%
+%
+%
+%    \begin{decl}
+%    |\baselanguage| \arg{language}
+%    \end{decl}
+%
+%    This declaration changes the current ``base language'' to
+%    <language>. It can only be used in the document body between
+%    paragraphs and is not allowed to appear inside of other language
+%    constructs such as the |langblock| environment or the |\langfrag|
+%    command.
+%
+%    \begin{decl}
+%    |\begin{langblock}| \arg{language}  ... |\end{langblock}| \\
+%    |\langblock| \arg{language} \arg{text}
+%    \end{decl}
+%
+%    The environment |langblock| takes one argument to denote the
+%    language of its body. The body is allowed to contain multiple
+%    paragraphs, i.e., a |langblock| is intended for longer text
+%    blocks in one language being embedded in another language. (When
+%    to use such blocks rather than changing the ``base language''
+%    might be defined by the house style or might be obvious given the
+%    nature of the text but can't be specified formally for all
+%    documents.) ``Language blocks'' can be nested.
+%    There is an alternate command form which takes two arguments the
+%    second being the text of the block.
+%
+%
+%    \begin{decl}
+%    |\begin{langfrag}| \arg{language}  ... |\end{langfrag}| \\
+%    |\langfrag| \arg{language} \arg{text}
+%    \end{decl}
+%
+%    The environment |langfrag| takes one argument to denote the
+%    language of its body. The body is not allowed  to contain
+%    complete paragraphs, i.e., a |langfrag| is intended for short text
+%    fragments, such as individual words or sentences, in one language
+%    being embedded in another language.
+%    There is an alternate command form which takes two arguments the
+%    second being the text of the fragment.
+%
+%
+% \subsection{Class and Package Interfaces}
+%
+%    The following commands are intended to be used in class and/or
+%    package files or, in some cases, in the preamble of the document
+%    to overwrite decisions made in class or package files.
+%
+%    \begin{decl}
+%    |\DeclareLanguageProperty| \arg{cmd}
+%    \end{decl}
+%
+%    Declares <cmd> to be a language command used by the current
+%    package or class. The purpose of this declaration is to announce
+%    to the \LaTeX{} system that this class or package uses the <cmd>
+%    (or even commands, it could be a comma separated list if we wish)
+%    as a language command and that therefore any declarations made
+%    via |\SetLanguagePropertyValue| or
+%    |\SetLanguagePropertyValueMapping| for this command are to be
+%    kept in the body of the document.
+%
+%
+%    \begin{decl}
+%    |\SetLanguagePropertyValue| \arg{language} \arg{cmd} \arg{action}
+%    \end{decl}
+%
+%    Sets the action to <action> for <cmd> in <language>. To set the
+%    default action to be anything other than a fixed error message, use
+%    \texttt{default} as <language>. Any such declaration is kept only up
+%    to the begin of the actual document unless <cmd> was declared within a
+%    package or class with |\DeclareLanguageProperty|.
+%
+%    -- check that <language> is in the list |\g_lang_known_languages_seq|, if not, add
+%    it to |\g_lang_known_languages_seq| and initiate |\g_lang_<language>_prop|.
+%
+%    -- add or modify <cmd>/<action> pair in |\g_lang_<language>_prop|.
+%
+%
+%
+%    \begin{decl}
+%    |\SetLanguagePropertyValueMapping| \arg{cmd} \arg{type-or-level}
+%    \end{decl}
+%
+%    Maps <cmd> to <type-or-level>. Any such declaration is kept only
+%    up to the beginning of the actual document unless <cmd> was
+%    declared within a package or class with
+%    |\DeclareLanguageProperty|.  If no such mapping value is declared
+%    for <cmd>, a global default is used.
+%
+%    -- add or modify an entry in |\g_lang_known_mappings_prop|.
+
+
+% \subsection{The system Interface}
+%
+%    One of the main aspects of the model is the notion of ``language
+%    structures'' (called parameter groups in the paper) which can be
+%    given different values for different languages. In this
+%    implementation they are modelled as commands each taking a single
+%    value.\footnote{This might need changing/extension.}
+%
+%
+% \DescribeMacro\DeclareLanguageProperty\meta{cmd}
+%    Declares the command name \meta{cmd} as a language command which
+%    means it can take different values in different languages.
+%
+%    It is permissible to declare a \meta{cmd} several times
+%
+% \DescribeMacro\DeclareLanguagePropertyValue\meta{lang}\meta{cmd}\meta{action}
+%    Defines the action carried out by \meta{cmd} if typesetting is
+%    done in language \meta{lang} to be \meta{action}
+%
+% \DescribeMacro\g_lang_known_cmds_seq
+%
+%
+% \subsection{Setting defaults}
+%
+%    Due to the relationship between |\DeclareLanguageProperty|,
+%    |\DeclareLanguagePropertyValue|, and
+%    |\DeclareLanguagePropertyValueMapping| it is possible to set
+%    default at different levels.
+%
+%    Predeclared actions for a language will be kept until
+%    |\begin{document}|; if the corresponding <language> is not among
+%    the list of document languages they will be removed at that
+%    point. This means that such declarations can even be put into the
+%    \LaTeX{} format without noticeable side effects.
+%
+%    Similarly the default sets of actions for a language can contain
+%    settings for language related commands declared (via
+%    |\DeclareLanguageProperty|) in various packages. If the
+%    corresponding package is not used in the document those
+%    declarations are then ignored. This allows, for example, to have
+%    customized user settings all stored in a single place (file) and
+%    loaded into each document without worrying which packages are
+%    actually being used.
+%
+%
+%    If a language specific command has no action associated with a
+%    certain language, its use inside this language will result in an
+%    error message unless a default action was specified for this command.
+%    Which of the two methods (error or default action) is appropriate
+%    really depends on the command itself. For example, for a command
+%    storing a language string (e.g., |\chaptername|) it is of limited
+%    use to provide a default value (other than ensuring that a
+%    document compiles), but for a selection of hyphenation patterns a
+%    sensible default could be ``do not hyphenate''.
+%
+%
+% \section{Implementation}
+%
+%
+%    We need a couple of support packages from the experimental
+%    \texttt{x...} series of package, in particular \texttt{ldcsetup}
+%    and \texttt{xtools} for the coding; \texttt{xo-trace} is only
+%    used because we don't have a general code tracing package yet (so
+%    reuse the one from the OR stuff).
+%    \begin{macrocode}
+%<*package>
+\RequirePackage{ldcsetup}
+\RequirePackage{xo-trace}
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\IgnoreWhiteSpace
+\InternalSyntaxOn
+%    \end{macrocode}
+%
+%
+%
+% \subsection{General support macros}
+%
+%    Code in this section does not really belong here and will be
+%    distributed to other files in the future.
+%
+% \begin{macro}{\IfNotOmega}
+%    \begin{macrocode}
+\cs_set_nopar:Npn \IfNotOmega{\ifx\textdir\@undefined}  % not really the way to go :-)
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\begin}
+%    To support environments with the same name as corresponding
+%    commands the |\begin| macro of \LaTeX{} is slightly modified. The
+%    code below checks at the begin level for the existence of a
+%    command with the name |\begin@@|\meta{env-name}; if this exists
+%    it will be used as the begin code for the environment
+%    \meta{env-name}, if not |\|\meta{env-name} will be used. This
+%    allows to define a command variant for the environment in the
+%    following way:
+%\begin{verbatim}
+%\newcommand\begin@@foo[n]{begin code for foo}
+%\cs_set_nopar:Npn \endfoo{end code for foo}
+%\newcommand\foo[n+1]{\begingroup
+%   \begin@@foo {#1}...{#n}
+%     #n+1
+%   \endfoo
+%  \endgroup}
+%\end{verbatim}
+%   There are a few restrictions when using the above concept:
+%   \begin{itemize}
+%   \item Due to the way \LaTeX{} guards definitions of new commands
+%    and environments you have to use |\cs_set_nopar:Npn | to define the |\endfoo|.
+%   \item Clearly the command version |\foo| needs one more argument
+%    than the environment version so the total number of arguments for
+%    the environment can be 8 not 9.
+%   \item For every environment used in a document there will be a
+%    test which might generate a second (otherwise unused)
+%    csname. This should be harmless as the total number of different
+%    environments in documents is not that large.
+%   \item
+%    The actual implementation might change and instead of the
+%    low-level setup above there might be a proper interface for
+%    declaring such environment/command combinations one day.
+%   \end{itemize}
+%   So here is the code:
+%    \begin{macrocode}
+\cs_set_nopar:Npn \begin#1{
+  \@ifundefined{#1}
+    {\cs_set_nopar:Npn \reserved@a{\@latex@error{Environment~ #1~ undefined}\@eha}}
+    {\cs_set_nopar:Npn \reserved@a{\cs_set_nopar:Npn \@currenvir{#1}
+     \edef\@currenvline{\on@line}
+%    \end{macrocode}
+%    The difference to the standard \LaTeX{} version is in the next
+%    four lines where the original simply calls on |\csname #1\endcsname|.
+%    \begin{macrocode}
+     \csname \expandafter
+       \ifx \csname begin@@#1\endcsname\relax
+       \else begin@@
+       \fi
+       #1\endcsname}}
+  \@ignorefalse
+  \begingroup\@endpefalse\reserved@a}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \subsection{Data structures for the language support}
+%
+%    In this section we initialize the internal structures.
+%
+% \begin{macro}{\g_lang_known_cmds_seq}
+%    Global queue in which we store every command name that was
+%    declared via |\DeclareLanguageProperty|. This information is used
+%    at |\begin{document}| to decide which language related actions
+%    need to be preserved for the current document.
+%    \begin{macrocode}
+\seq_new:N \g_lang_known_cmds_seq
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \begin{macro}{\g_lang_known_languages_seq}
+%    Global queue in which we store all language names for which we
+%    have seen at least one |\SetLanguagePropertyValue|. We need this
+%    information for housekeeping since we want to get rid of all
+%    information for languages which are not used in a particular
+%    document (and for this we better keep track of all language for
+%    which we stored something).
+%    \begin{macrocode}
+\seq_new:N \g_lang_known_languages_seq
+%    \end{macrocode}
+% \end{macro}
+%
+%    There is one pseudo language which we need in any case (the
+%    ``default'' language which is the ``language'' in which we stored
+%    default actions. So let's initialise that one directly.
+%    \begin{macrocode}
+\seq_gput_right:Nn \g_lang_known_languages_seq {default}
+%    \end{macrocode}
+%
+%
+%
+% \begin{macro}{\g_lang_default_prop}
+%    For each language there will be a property list with the name
+%    |\g_lang_<language>_prop| which holds all the actions declared
+%    via |\SetLanguagePropertyValue|. Here is the one for the
+%    ``default'' language. All others will get implicitly generated
+%    the first time a language enters the scene.
+%    \begin{macrocode}
+\prop_new:N \g_lang_default_prop
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+%
+%
+% \subsection{Declaring language structures}
+%
+% \begin{macro}{\DeclareLanguageProperty}
+%    |\DeclareLanguageProperty| takes a command name as its argument
+%    and adds it to |\g_lang_known_cmds_seq| if not already present.
+%    \begin{macrocode}
+\cs_set_nopar:Npn \DeclareLanguageProperty #1  % <cmd>
+  {
+    \seq_if_in:NnF
+       \g_lang_known_cmds_seq {#1}
+       {
+         \seq_gput_right:Nn \g_lang_known_cmds_seq {#1}
+       }
+  }
+\@onlypreamble\DeclareLanguageProperty
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\SetLanguagePropertyValue}
+%    Sets the action to <action> for <cmd> in <language>. To set the
+%    default action to be anything other than error message use
+%    "default" as <language>.
+%
+% - check that <language> is on |\g_lang_known_languages_seq|, if
+%   not add it to
+%   |\g_lang_known_languages_seq| and initiate |\g_lang_<language>_prop|.
+%
+% - add or modify <cmd>/<action> pair in |\g_lang_<language>_prop|.
+%
+%    \begin{macrocode}
+\newcommand*\SetLanguagePropertyValue[3]              % <language> <cmd> <action>
+  {
+    \seq_if_in:NnF
+      \g_lang_known_languages_seq {#1}
+       {
+         \seq_gput_right:Nn\g_lang_known_languages_seq{#1}
+         \prop_new:c {g_lang_#1_prop}
+       }
+    \prop_gput:cnn {g_lang_#1_prop} {#2} { \lang_set_action:Nn#2 {#3} }
+  }
+
+\@onlypreamble\SetLanguagePropertyValue
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+% \begin{macro}{\lang_set_action:Nn}
+%    \begin{macrocode}
+\cs_set_nopar:Npn \lang_set_action:Nn #1#2
+  {
+    \tl_set:Nn#1{#2}
+    \trace_display:n{LANG:~ setting~ \string#1~ \meaning#1}
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \begin{macro}{\SetLanguagePropertyValueMapping}
+%    Sets the PAM value to <value> for <cmd>.
+%
+%    - add or modify entry in |\g_lang_known_mappings_prop|.
+%
+%    \begin{macrocode}
+\newcommand*\SetLanguagePropertyValueMapping
+  {
+    \prop_gput:Nnn \g_lang_known_mappings_prop
+  }
+
+\@onlypreamble\SetLanguagePropertyValueMapping
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\PreambleToBodyAlgorithm}
+%   for each <cmd> in |\g_lang_known_cmds_seq|, do:
+%
+%   "find PAM-value" and store in <PAMvalue>;
+%
+%   for each <lang> in |\usedlanguages|, do:
+%
+%     "find action for <cmd> in language <lang>";
+%
+%     add `explicit' form of this action to |\actions|<lang><PAMvalue>
+%
+%    \begin{macrocode}
+\tl_new:N \l_xlang_tmp_tl
+\newcommand\PreambleToBodyAlgorithm
+  {
+%<*trace>
+   \trace_push:n{PreambleToBodyAlgorithm}
+%</trace>
+    \seq_map_inline:Nn
+       \g_lang_known_cmds_seq
+       {
+         {
+           \seq_map_inline:Nn
+             \usedlanguages
+             {
+%    \end{macrocode}
+% "find action for <cmd> in language <lang>"
+%
+% if <cmd> has entry in |\g_lang_<language>_prop|,
+%   then
+%     retrieve action
+%   else
+%     if <cmd> has entry in |\g_lang_default_prop|,
+%       then
+%         retrieve action
+%       else
+%         define action to be ERROR: <cmd> has no declaration for
+%                                      language <lang>
+%                             HELP: declare action using
+%                                      |\SetLanguagePropertyValue| ...
+%
+%
+%
+%    \begin{macrocode}
+              \prop_get:cnN {g_lang_ ####1 _prop} {##1} \l_action_lang_tl
+              \quark_if_no_value:NT \l_action_lang_tl
+                 {
+                   \prop_get:NnN \g_lang_default_prop {##1} \l_action_lang_tl
+                   \quark_if_no_value:NT \l_action_lang_tl
+                     {
+                      \tl_gset:Nn \l_action_lang_tl
+                         {
+                           \lang_set_action:Nn##1
+                             {\errmessage{ERROR:~ \noexpand##1 has~ no~
+                               definition~ in~ \l_curr_lang_tl}}
+                         }
+                     }
+                 }
+%    \end{macrocode}
+%    Thus, after the above code |\l_action_lang_tl| contains a
+%    ``valid'' action for the current command and we can safely
+%    proceed\ldots
+%
+% "find PAM-value"
+%
+% if PAM-value for <cmd> is in |\g_lang_known_mappings_prop|,
+%   then
+%     retrieve it
+%   else
+%     use fixed default value
+%
+%
+%    \begin{macrocode}
+              \prop_get:NnN
+                 \g_lang_known_mappings_prop
+                 {##1}
+                 \l_xlang_tmp_tl
+              \tl_gset_eq:NN \g_PAM_value_tl \l_xlang_tmp_tl
+              \quark_if_no_value:NT
+                 \g_PAM_value_tl
+                 { \tl_gset:Nn \g_PAM_value_tl { all } }
+%    \end{macrocode}
+%
+%%%% next 3lines are a temp fix for the tl module not having a proper init
+%    \begin{macrocode}
+               \expandafter\ifx\csname actions ####1 \g_PAM_value_tl\endcsname \relax
+                  \tl_gclear:c {actions ####1 \g_PAM_value_tl}
+               \fi
+               \tl_gput_right:co {actions ####1 \g_PAM_value_tl}
+                                  \l_action_lang_tl
+             }
+         }
+       }
+%    \end{macrocode}
+%
+% for each <lang> in |\g_lang_known_languages_seq|, do:
+%
+%   empty |\g_lang_<language>_prop|
+%
+% empty all other preamble structures.
+%
+%
+%    \begin{macrocode}
+    \seq_map_inline:Nn
+       \usedlanguages
+       {
+        \tl_gclear:c {g_lang_ ##1 _prop }       % using fact that prop-lists are also tl vars
+       }
+%    \end{macrocode}
+%    keep for |\Show...| cmds for the moment
+%    \begin{macrocode}
+%   \seq_gclear:N  \g_lang_known_cmds_seq
+    \seq_gclear:N  \g_lang_known_languages_seq
+    \prop_gclear:N   \g_lang_known_mappings_prop
+% others?
+%<*trace>
+   \trace_pop:n{PreambleToBodyAlgorithm}
+%</trace>
+  }
+
+\@onlypreamble\PreambleToBodyAlgorithm
+
+\AtBeginDocument{\PreambleToBodyAlgorithm}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+%
+%
+%
+% \begin{macro}{\DeclareDocumentLanguages}
+%    \begin{macrocode}
+%
+% \DeclareDocumentLanguages <language-list>
+%
+% Lists all languages that are used in the document (any other language
+% will then generate an error message if it appears in a language change
+% command or environment)
+%
+% - produces \usedlanguages list
+%
+\newcommand\DeclareDocumentLanguages   %  arg <language-list> (implicit)
+  {
+   \seq_from_clist:Nn \usedlanguages
+  }
+
+\@onlypreamble\DeclareDocumentLanguages
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+% \begin{macro}{\SetDocumentLanguage}
+%    \begin{macrocode}
+%
+% \SetDocumentLanguage <language>
+%
+% Declares <language> to be the document language.
+%
+
+\newcommand\SetDocumentLanguage        %  <language> (implicit)
+  { \tl_gset:Nn \g_document_lang_tl }
+
+\@onlypreamble\SetDocumentLanguage
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \subsection{Body tags}
+%
+%
+% \begin{macro}{\baselanguage}
+% \begin{macro}{\@baselanguage}
+%     A base-language change command with the language-label as
+%     argument.  This command is declarative to highlight the flat
+%     structure of base languages.
+%
+%    We expand the argument once to allow the language name being
+%    hidden inside a macro.
+%    \begin{macrocode}
+\newcommand*\baselanguage[1]  % <language>
+  {\expandafter\@baselanguage\expandafter{#1}}
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\newcommand*\@baselanguage[1]
+  {
+   \par
+%    \end{macrocode}
+%    The command should not be called inside language blocks or frags
+%    so we first check if the |\l_curr_thd_type_tl| is ``base''.
+%    \begin{macrocode}
+   \if_meaning:w \l_curr_thd_type_tl \c_lang_thd_base_name_tl
+     \lang_check:nT {#1}
+        {
+         \tl_gset:Nn   \g_base_lang_tl {#1}
+         \tl_set_eq:NN \l_curr_lang_tl \g_base_lang_tl
+%    \end{macrocode}
+%    Since we know the |\l_next_thd_level_tl| being |base| we don't need
+%    to call |\lang_update_level:n| but instead do the
+%    updates directly. First the update of the language data structures.
+%    \begin{macrocode}
+         \lang_actions_base:n {#1}
+%    \end{macrocode}
+%    Then we update the font encoding
+%    \begin{macrocode}
+         \lang_update_encodings:
+%    \end{macrocode}
+%    \ldots and if necessary the text direction:
+%    \begin{macrocode}
+% ---------START-----------------
+         \lang_update_direction:
+        }
+%    \end{macrocode}
+%    If we are not at ``base'' signal an error (not yet implemented
+%    really):
+%    \begin{macrocode}
+   \else
+     \ERRORbaselanguagenotatbaselevel
+     \show\l_curr_thd_type_tl
+     \show\c_lang_thd_base_name_tl
+   \fi
+  }
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+% \begin{macro}{\c_lang_thd_base_name_tl}
+%    A constant holding the name of the ``base''.
+%    \begin{macrocode}
+\tl_const:Nn \c_lang_thd_base_name_tl {base}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%    At start of the document body we initiate all actions tied to the
+%    document level and then make the document language the
+%    first base language.
+%    \begin{macrocode}
+\AtBeginDocument
+  {
+   \lang_actions:nn\g_document_lang_tl{document}
+   \baselanguage\g_document_lang_tl
+  }
+%    \end{macrocode}
+%
+%
+%    The next three macros define the \texttt{langblock} environment
+%    and its command form |\langblock| using the extended |\begin|
+%    mechanism.
+%
+% \begin{macro}{\begin@@langblock}
+%    A language-environment with the language-label as argument and
+%    text as body.  The environment starts a new paragraph to enforce
+%    the block level nature.
+%    \begin{macrocode}
+\newcommand*\begin@@langblock[1]
+  {
+%<*trace>
+   \trace_push:n{langblock:~ #1}
+%</trace>
+   \par
+   \lang_check:nT {#1}
+     {
+      \tl_set:Nn \l_curr_lang_tl {#1}
+      \lang_update_level:n {#1}
+      \lang_update_block:n {#1}
+      \lang_update_encodings:
+      \lang_update_direction:
+     }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\endlangblock}
+%    At the end of the block we issue a par to enforce the block-level
+%    nature. Nothing else to do since restoring happens implicitly at
+%    the |\endgroup| of the |\end| tag.
+%    \begin{macrocode}
+\cs_set_nopar:Npn \endlangblock
+  {\par
+%<*trace>
+   \trace_pop:n{langblock}
+%</trace>
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+%
+% \begin{macro}{\langblock}
+%
+%    This command accepts full paragraphs in its second argument so we
+%    have to use |\newcommand| to define it.
+%    \begin{macrocode}
+\newcommand\langblock[2]      % <language> <text>
+  {
+   \begingroup
+     \begin@@langblock{#1}
+     #2
+     \endlangblock
+   \endgroup
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+%
+%
+%    The next three macros define the \texttt{langfrag} environment
+%    and its command form |\langfrag| using the extended |\begin|
+%    mechanism. They are more or less conceptually identical to the
+%    ones defining the environment \texttt{langblock} except that they
+%    don't accept |\par|s in their argument\footnote{Actually, the
+%    environment for does allow them, we would need to trap the
+%    command explicitly to prevent that; not yet done.} and do not
+%    start and end a paragraph.
+%
+%
+% \begin{macro}{\begin@@langfrag}
+%    A language-command with the language-label and text both as
+%    arguments. In contrast to the environment, this command applies
+%    language related actions to its second argument, which cannot
+%    directly contain full paragraphs.
+%    \begin{macrocode}
+\newcommand*\begin@@langfrag[1]
+  {
+%<*trace>
+   \trace_push:n{langfrag:~ #1}
+%</trace>
+   \lang_check:nT {#1}
+    {
+       \tl_set:Nn \l_curr_lang_tl {#1}
+       \lang_update_level:n {#1}
+       \lang_update_frag:n {#1}
+       \lang_update_encodings:
+       \lang_update_direction:
+    }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\endlangfrag}
+%    At the end of the language change there is nothing to do (except
+%    for tracing what is happening.
+%    \begin{macrocode}
+\cs_set_nopar:Npn \endlangfrag
+  {
+%<*trace>
+   \trace_pop:n{langfrag}
+%</trace>
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\langfrag}
+%    This command should not accept multiple paragraphs in its
+%    argument so we use |\newcommand*| to define it.
+%    \begin{macrocode}
+\newcommand*\langfrag[2]      % <language> <text>
+  {
+   \begingroup
+     \begin@@langfrag{#1}
+     #2
+     \endlangfrag
+   \endgroup
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+% \begin{macro}{\lang_check:nT}
+%    Check that language is one of the declared and if so execute second
+%    argument (true case) otherwise generate error.
+%    \begin{macrocode}
+\cs_set_nopar:Npn \lang_check:nT #1#2
+  {
+   \seq_if_in:NnTF \usedlanguages {#1}
+       {#2}
+       {\errmessage{ERROR:~ language~ #1~ not~ known}}
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+% \begin{macro}{\lang_update_level:n}
+%    Go down the level in the thd (nesting) and execute all
+%    corresponding actions:
+%    \begin{macrocode}
+\cs_set_nopar:Npn \lang_update_level:n
+%    \end{macrocode}
+%    Tracing considered harmful :-(, i.e., without we can make the
+%    argument implicit.
+%    \begin{macrocode}
+%<*trace>
+   #1
+%</trace>
+  {
+%<*trace>
+   \trace_push:n{lang_update_level:n:~ \l_next_thd_level_tl}
+%</trace>
+    \use:c {lang_actions_ \l_next_thd_level_tl :n}
+%<*trace>
+           {#1}
+%</trace>
+%<*trace>
+   \trace_pop:n{lang_update_level:n}
+%</trace>
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+% \begin{macro}{\lang_update_block:n}
+%    \begin{macrocode}
+\cs_set_nopar:Npn \lang_update_block:n #1
+  {
+%<*trace>
+   \trace_push:n{lang_update_block:n}
+%</trace>
+   \use:c {lang_actions_ \l_curr_thd_type_tl _block:n}
+%<*trace>
+          {#1}
+%</trace>
+%<*trace>
+   \trace_pop:n{lang_update_block:n}
+%</trace>
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+% \begin{macro}{\lang_update_frag:n}
+%    \begin{macrocode}
+\cs_set_nopar:Npn \lang_update_frag:n #1
+  {
+%<*trace>
+   \trace_push:n{lang_update_frag:n}
+%</trace>
+   \use:c {lang_actions_ \l_curr_thd_type_tl _frag:n}
+%<*trace>
+          {#1}
+%</trace>
+%<*trace>
+   \trace_pop:n{lang_update_frag:n}
+%</trace>
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+% \begin{macro}{\lang_update_encodings:}
+%    \begin{macrocode}
+\cs_set_nopar:Npn \lang_update_encodings:{
+    \fontencoding\fontencodingname\selectfont
+%    \end{macrocode}
+%    Next set of lines require the \texttt{inputenc} package, so need
+%    different handling eventually.
+%    \begin{macrocode}
+    \ifx\inputencodingname\@empty
+    \else
+      \inputencoding\inputencodingname
+    \fi
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \begin{macro}{\lang_update_direction:}
+%    \begin{macrocode}
+\IfNotOmega
+  \cs_set_nopar:Npn \lang_update_direction:{
+\typeout{Not~ Omega!}
+%    \end{macrocode}
+%    \begin{macrocode}
+  }
+\else
+  \cs_set_nopar:Npn \lang_update_direction:{}
+\fi
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\lang_actions:nn}
+%
+%    For each language in |\usedlanguages| and each node-type in the
+%    THD,
+%
+%    |\actions<language><node-type>|
+%
+%     `explicit' list of what happens, for that node-type, when changing to
+%     language <language> at a node of type <node-type>.
+
+%    to reduce the number of csname one can make this functions with
+%    <language> as their argument this will be slower in processing
+%    but simpler in setup ...
+
+%    \begin{macrocode}
+\cs_set_nopar:Npn  \lang_actions:nn #1#2
+  { \csname actions #1 #2 \endcsname }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_all:n}
+%    \begin{macrocode}
+
+\cs_set_nopar:Npn  \lang_actions_all:n #1
+   { \lang_actions:nn{#1}{all} }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_second:n}
+%    \begin{macrocode}
+
+\cs_set_nopar:Npn  \lang_actions_second:n #1
+   { \lang_actions:nn{#1}{second}
+     \lang_actions_all:n{#1}
+     \tl_set:Nn \l_next_thd_level_tl {all}
+   }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_first:n}
+%    \begin{macrocode}
+
+\cs_set_nopar:Npn  \lang_actions_first:n #1
+   { \lang_actions:nn{#1}{first}
+     \lang_actions_second:n{#1}
+     \tl_set:Nn \l_next_thd_level_tl {second}
+   }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_base:n}
+%    \begin{macrocode}
+
+\cs_set_nopar:Npn  \lang_actions_base:n #1
+   { \lang_actions:nn{#1}{base}
+     \lang_actions_first:n{#1}
+     \lang_actions_base_block:n{#1}
+     \tl_set:Nn \l_next_thd_level_tl {first}
+     \tl_set:Nn \l_curr_thd_type_tl  {base}
+   }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_base_block:n}
+%    \begin{macrocode}
+
+\cs_set_nopar:Npn  \lang_actions_base_block:n #1
+   { \lang_actions:nn{#1}{block}
+     \lang_actions:nn{#1}{subblock}
+     \lang_actions:nn{#1}{frag}
+     \tl_set:Nn \l_curr_thd_type_tl {block}
+   }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_block_block:n}
+%    \begin{macrocode}
+\cs_set_nopar:Npn  \lang_actions_block_block:n #1
+   { \lang_actions:nn{#1}{subblock}
+     \lang_actions:nn{#1}{frag}
+     \tl_set:Nn \l_curr_thd_type_tl {subblock}
+   }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_subblock_block:n}
+%    \begin{macrocode}
+\cs_set_eq:NN  \lang_actions_subblock_block:n \lang_actions_block_block:n
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_base_frag:n}
+%    \begin{macrocode}
+
+\cs_set_nopar:Npn  \lang_actions_base_frag:n #1
+   { \lang_actions:nn{#1}{frag}
+     \tl_set:Nn \l_curr_thd_type_tl {frag}
+   }
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_block_frag:n}
+%    \begin{macrocode}
+
+\cs_set_eq:NN  \lang_actions_block_frag:n \lang_actions_base_frag:n
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_subblock_frag:n}
+%    \begin{macrocode}
+\cs_set_eq:NN  \lang_actions_subblock_frag:n \lang_actions_base_frag:n
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_frag_frag:n}
+%    \begin{macrocode}
+\cs_set_eq:NN  \lang_actions_frag_frag:n  \lang_actions_base_frag:n
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\lang_actions_frag_block:n}
+%    \begin{macrocode}
+\cs_set_eq:NN  \lang_actions_frag_block:n \lang_actions_base_frag:n
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+%
+%
+%
+%
+%
+%
+%
+% \begin{macro}{\usedlanguages}
+%    \begin{macrocode}
+\seq_new:N \usedlanguages
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\g_lang_known_mappings_prop}
+%    List of |<cmd>/<PAM-value>| pairs
+%    \begin{macrocode}
+\prop_new:N \g_lang_known_mappings_prop
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\l_curr_lang_tl}
+%     Current language
+%    \begin{macrocode}
+\tl_new:N \l_curr_lang_tl
+\tl_set:Nn \l_curr_lang_tl {?}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\g_base_lang_tl}
+%    Current base language
+%    \begin{macrocode}
+\tl_new:N \g_base_lang_tl
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\g_document_lang_tl}
+%    Document language (more or less a constant)
+%    \begin{macrocode}
+\tl_new:N \g_document_lang_tl
+\tl_gset:Nn \g_document_lang_tl {english}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\l_curr_thd_type_tl}
+%    Current type of the thd node (this is the block or frag rail)
+%    \begin{macrocode}
+\tl_new:N \l_curr_thd_type_tl
+\tl_set:Nn \l_curr_thd_type_tl {base}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\l_next_thd_level_tl}
+%    Upcoming level in nesting hierarchy (we start at base)
+%    \begin{macrocode}
+\tl_new:N \l_next_thd_level_tl
+\tl_set:Nn \l_next_thd_level_tl {first}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\seq_from_clist:Nn}
+%    \begin{macrocode}
+\cs_set_nopar:Npn  \seq_from_clist:Nn #1#2
+  {
+   \clist_map_inline:nn {#2} { \seq_gput_right:Nn #1 {##1} }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\ShowLanguagePropertyStatus}
+%    \begin{macrocode}
+\cs_set_nopar:Npn  \ShowLanguagePropertyStatus {
+%<*trace>
+   \trace_push:n{ShowLanguagePropertyStatus~(language=\l_curr_lang_tl)}
+%</trace>
+   \seq_map_inline:Nn \g_lang_known_cmds_seq
+      { \trace_display:n{ \string##1:~\meaning ##1 } }
+%<*trace>
+   \trace_pop:n{ShowLanguagePropertyStatus}
+%</trace>
+}
+%    \end{macrocode}
+% \end{macro}
+%
+%
+%
+% \begin{macro}{\fontencodingname}
+% \begin{macro}{\inputencodingname}
+%    \begin{macrocode}
+\DeclareLanguageProperty\fontencodingname
+\DeclareLanguageProperty\inputencodingname
+\SetLanguagePropertyValue{default}\fontencodingname {\encodingdefault}
+\SetLanguagePropertyValue{default}\inputencodingname{}
+%    \end{macrocode}
+% \end{macro}
+% \end{macro}
+%
+%
+%    \begin{macrocode}
+\DeclareLanguageProperty\prefacename
+\DeclareLanguageProperty\refname
+\DeclareLanguageProperty\abstractname
+\DeclareLanguageProperty\bibname
+\DeclareLanguageProperty\chaptername
+\DeclareLanguageProperty\appendixname
+\DeclareLanguageProperty\contentsname
+\DeclareLanguageProperty\listfigurename
+\DeclareLanguageProperty\listtablename
+\DeclareLanguageProperty\indexname
+\DeclareLanguageProperty\figurename
+\DeclareLanguageProperty\tablename
+\DeclareLanguageProperty\partname
+\DeclareLanguageProperty\enclname
+\DeclareLanguageProperty\ccname
+\DeclareLanguageProperty\headtoname
+\DeclareLanguageProperty\pagename
+\DeclareLanguageProperty\seename
+\DeclareLanguageProperty\alsoname
+\DeclareLanguageProperty\proofname
+\DeclareLanguageProperty\glossaryname
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+
+\cs_set_nopar:Npn \addcontentsline#1#2#3{%
+  \addtocontents{#1}{\protect\contentsline{#2}
+    {\string\langfrag{\l_curr_lang_tl}{#3}}{\thepage}}}
+
+% unchanged so far
+\cs_set:Npn \addtocontents#1#2{%
+  \protected@write\@auxout
+      {\cs_set_eq:NN \label\@gobble
+       \cs_set_eq:NN \index\@gobble
+       \cs_set_eq:NN \glossary\@gobble}%
+      {\string\@writefile{#1}{#2}}}
+
+%</package>
+%    \end{macrocode}
+%
+%    Some sample stuff\ldots
+%    \begin{macrocode}
+%<*german>
+\SetLanguagePropertyValue{german}\prefacename   {Vorwort}
+\SetLanguagePropertyValue{german}\refname       {Literatur}
+\SetLanguagePropertyValue{german}\abstractname  {Zusammenfassung}
+\SetLanguagePropertyValue{german}\bibname       {Literaturverzeichnis}
+\SetLanguagePropertyValue{german}\chaptername   {Kapitel}
+\SetLanguagePropertyValue{german}\appendixname  {Anhang}
+\SetLanguagePropertyValue{german}\contentsname  {Inhaltsverzeichnis}    % oder nur: Inhalt
+\SetLanguagePropertyValue{german}\listfigurename{Abbildungsverzeichnis}
+\SetLanguagePropertyValue{german}\listtablename {Tabellenverzeichnis}
+\SetLanguagePropertyValue{german}\indexname     {Index}
+\SetLanguagePropertyValue{german}\figurename    {Abbildung}
+\SetLanguagePropertyValue{german}\tablename     {Tabelle}               % oder: Tafel
+\SetLanguagePropertyValue{german}\partname      {Teil}
+\SetLanguagePropertyValue{german}\enclname      {Anlage(n)}             % oder: Beilage(n)
+\SetLanguagePropertyValue{german}\ccname        {Verteiler}             % oder: Kopien an
+\SetLanguagePropertyValue{german}\headtoname    {An}
+\SetLanguagePropertyValue{german}\pagename      {Seite}
+\SetLanguagePropertyValue{german}\seename       {siehe}
+\SetLanguagePropertyValue{german}\alsoname      {siehe auch}
+\SetLanguagePropertyValue{german}\proofname     {Beweis}
+\SetLanguagePropertyValue{german}\glossaryname  {Glossar}
+%</german>
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+\endinput
+%    \end{macrocode}
+%
+%
+% \PrintIndex
+%
+%

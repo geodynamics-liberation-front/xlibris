@@ -1,0 +1,118 @@
+This is a generated file for the LaTeX (2e + expl3) validation system.
+Don't change this file in any respect.
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+Author: Bruno Le Floch
+============================================================
+TEST 1: TL
+============================================================
+> \l_tmpa_tl=macro:
+->abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g
+abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g
+abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g
+abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g
+abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g .
+<recently read> }
+l.19   }
+> abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g
+abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g
+abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g
+abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g
+abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g abcde\\g .
+<recently read> }
+l.19   }
+============================================================
+============================================================
+TEST 2: SEQ
+============================================================
+The sequence \l_tmpa_seq contains the items (without outer braces):
+>  {xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\
+xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\
+xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ xy\\ }
+>  {ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD
+efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD
+efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD
+efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD
+efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD
+efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi ABCD efghi }.
+<recently read> }
+l.30   }
+============================================================
+============================================================
+TEST 3: CLIST
+============================================================
+Defining \l_my_very_very_very_very_very_very_long_clist on line ...
+The comma list \l_my_very_very_very_very_very_very_long_clist contains the
+items (without outer braces):
+>  {abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij
+abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij
+abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij abcdefghij}
+>  {2}.
+<recently read> }
+l.38   }
+============================================================
+============================================================
+TEST 4: PROP
+============================================================
+The property list \l_tmpa_prop contains the pairs (without outer braces):
+>  {the key1 the key1 the key1 the key1 the key1 the key1 the key1 the key1
+the key1 the key1 the key1 the key1 the key1 the key1 the key1 the key1 the
+key1 the key1 the key1 the key1 the key1 the key1 the key1 the key1 the key1
+the key1 the key1 the key1 the key1 the key1 the key1 the key1 the key1 the
+key1 the key1 the key1 the key1 the key1 the key1 the key1 }  =>  {val1}
+>  {key2}  =>  {the val2 the val2 the val2 the val2 the val2 the val2 the val2
+the val2 the val2 the val2 the val2 the val2 the val2 the val2 the val2 the
+val2 the val2 the val2 the val2 the val2 the val2 the val2 the val2 the val2
+the val2 the val2 the val2 the val2 the val2 the val2 the val2 the val2 the
+val2 the val2 the val2 the val2 the val2 the val2 the val2 the val2 }.
+<recently read> }
+l.52   }
+============================================================
+============================================================
+TEST 5: CS
+============================================================
+> \tmp:w=\long macro:
+#1 abcdefghi jklmnopqr stuvwxyz abcdef ghi jklmn opqrstuvwxyz #2->Abc def,
+ghijkl m! No, pqrst-uv-wxyzab. Cdefghi jkl. Mnopqrst uvw xyz. Abc def, ghijkl
+m! No, pqrst-uv-wxyzab. Cdefghi jkl. Mnopqrst uvw xyz. Abc def, ghijkl m! No,
+pqrst-uv-wxyzab. Cdefghi jkl. Mnopqrst uvw xyz. .
+<recently read> }
+l.77   }
+> \aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=alignment tab
+character &.
+<recently read> }
+l.77   }
+> \aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=alignment
+tab character &.
+<recently read> }
+l.77   }
+> 
+\aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=alignme
+nt
+tab character &.
+<recently read> }
+l.77   }
+> 
+\aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa=al
+ignment
+tab character &.
+<recently read> }
+l.77   }
+> &=alignment tab character &.
+<recently read> }
+l.77   }
+============================================================

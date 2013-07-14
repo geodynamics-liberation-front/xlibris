@@ -1,0 +1,242 @@
+% \iffalse
+%% File xo-trace.dtx (C) Copyright 1999-2000 Frank Mittelbach, David Carlisle, Chris Rowley
+%%                   (C) Copyright 2004-2009 Frank Mittelbach, LaTeX3 Project
+%%
+%% It may be distributed and/or modified under the conditions of the
+%% LaTeX Project Public License (LPPL), either version 1.3c of this
+%% license or (at your option) any later version.  The latest version
+%% of this license is in the file
+%%
+%%    http://www.latex-project.org/lppl.txt
+%%
+%% This file is part of the ``xor bundle'' (The Work in LPPL)
+%% and all files in that bundle must be distributed together.
+%%
+%% The released version of this bundle is available from CTAN.
+%%
+%% -----------------------------------------------------------------------
+%%
+%% The development version of the bundle can be found at
+%%
+%%    http://www.latex-project.org/svnroot/experimental/trunk/
+%%
+%% for those people who are interested.
+%%
+%%%%%%%%%%%
+%% NOTE: %%
+%%%%%%%%%%%
+%%
+%%   Snapshots taken from the repository represent work in progress and may
+%%   not work or may contain conflicting material!  We therefore ask
+%%   people _not_ to put them into distributions, archives, etc. without
+%%   prior consultation with the LaTeX Project Team.
+%%
+%% -----------------------------------------------------------------------
+%%
+\RequirePackage{l3bootstrap}
+\GetIdInfo $Id$
+          {xo-trace}
+\ProvidesExplPackage{\ExplFileName}
+  {\ExplFileDate}{\ExplFileVersion}{\ExplFileDescription}
+% \fi
+%
+%
+%
+% \begin{macro}{\showmarks}
+%    Show the current meaning of the different marks on the page.
+%    \begin{macrocode}
+\cs_set_nopar:Npn \showmarks {
+  \typeout{topmark:~ \exp_not:V \topmark}
+  \typeout{firstmark:~ \exp_not:V \firstmark }
+  \typeout{botmark:~ \exp_not:V \botmark}
+}
+%    \end{macrocode}
+% \end{macro}
+%
+% \begin{macro}{\showfloatlists}
+%
+%    \begin{macrocode}
+\cs_new_nopar:Npn \showfloatlists
+  {
+    \typeout{free:~  \meaning\g_xor_float_free_seq}
+    \typeout{active:~\meaning\g_xor_floats_active_seq}
+    \typeout{mvl:~   \meaning\g_xor_floats_mvl_seq}
+    \typeout{defer:~ \meaning\g_xor_area_DDD_float_seq}
+    \typeout{here:~ \meaning\g_xor_floats_here_seq }
+
+    \clist_map_function:NN \g_xor_areas_used_clist \showfloatarea
+
+    \exp_args:Nx \tl_show:n
+      {
+        currbox \tl_to_str:N \g_xor_curr_float_box_tl
+        > ~ this@float \tl_to_str:N \g_xor_this_float_box_tl
+        >
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%
+% \begin{macro}{\showfloatarea}
+%    Show the contents of a single area for debugging purposes.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \showfloatarea #1
+  {
+    \seq_if_exist:cT { g_xor_area_#1_float_seq }
+      {
+        \seq_if_empty:cF { g_xor_area_#1_float_seq }
+          {
+            \typeout
+              {
+                \space\space\space #1:\space
+                % FMi tmp
+                \cs_meaning:c {g_xor_area_#1_float_seq}
+              }
+          }
+      }
+  }
+%    \end{macrocode}
+% \end{macro}
+%
+%  \begin{macro}{\trace_display:n}
+%    This macro unconditionally displays some tracing information on the
+%    screen.
+%    In case we want to show the content of some sequence we locally redefine
+%    their data structures (may have to be done for other types as well).
+%    \begin{macrocode}
+%<*trace>
+\cs_new_nopar:Npn \trace_display:n #1
+  {
+    \__seq_push_item_def:n { ##1 \space }
+    \typeout { :~\g_trace_prefix_tl~#1 }
+    \__seq_pop_item_def:
+  }
+%    \end{macrocode}
+%  \end{macro}
+%
+%  \begin{macro}{g_trace_prefix_tl}
+%    \begin{macrocode}
+\tl_new:N \g_trace_prefix_tl
+%    \end{macrocode}
+%  \end{macro}
+%
+%  \begin{macro}{\trace_push:n}
+%    \begin{macrocode}
+\cs_new_nopar:Npn \trace_push:n #1
+  {
+    \trace:n {entering~#1}
+    \tl_gput_right:Nn \g_trace_prefix_tl {-}
+  }
+%    \end{macrocode}
+%  \end{macro}
+%
+%
+%  \begin{macro}{\trace_pop:n}
+%    To get rid of one |-| inside |\g_trace_prefix_tl|, set it to its
+%    own tail. Kind of a ``poor man's'' pop.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \trace_pop:n #1
+  {
+    \tl_gset:Nx \g_trace_prefix_tl { \tl_tail:N \g_trace_prefix_tl }
+    \trace:n {leaving~#1}
+  }
+%    \end{macrocode}
+%  \end{macro}
+%
+%
+%  \begin{macro}{\tracefloats}
+%  \begin{macro}{\notrace}
+%    \begin{macrocode}
+\cs_new_nopar:Npn \tracefloats{\cs_gset_eq:NN \trace:n \trace_display:n}
+\cs_new_nopar:Npn \notrace    {\cs_gset_eq:NN \trace:n \use_none:n}
+%    \end{macrocode}
+%    The default is not to trace.
+%    \begin{macrocode}
+\notrace
+%    \end{macrocode}
+%  \end{macro}
+%  \end{macro}
+%
+%
+%
+%
+%  \begin{macro}{\traceonly}
+%    Tracing only some (at the moment exactly one) function and its subcomponents.
+%    \begin{macrocode}
+\cs_new_nopar:Npn \traceonly #1
+  {
+    \notrace
+    \tl_set:Nn \l_trace_only_tl {#1}
+%    \end{macrocode}
+%    |\trace_push:n| is redefined to compare the current function on the stack
+%    (its argument) with the function to be traced. If the desired function is
+%    entered the current |\g_trace_prefix_tl| is stored away in
+%    |\g_trace_this_prefix_tl| and tracing is started.\footnote{fix this is
+%    rubbish ... the idea should be to allow for recursive entering the same
+%    function  ... fix some other time :-) }
+%    \begin{macrocode}
+    \cs_gset_nopar:Npn \trace_push:n ##1
+      {
+        \tl_set:Nn \l_trace_this_only_tl {##1}
+        \token_if_eq_meaning:NNT
+          \l_trace_this_only_tl \l_trace_only_tl
+          {
+            \tl_gset_eq:NN \g_trace_this_prefix_tl \g_trace_prefix_tl
+            \tracefloats
+            \trace:n {entering~##1}
+          }
+        \tl_gset:Nn \g_trace_prefix_tl {-\g_trace_prefix_tl}
+      }
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+    \cs_set_nopar:Npn \trace_pop:n ##1
+      {
+        \trace:n {leaving~##1}
+        \tl_gset:Nx \g_trace_prefix_tl { \tl_tail:N \g_trace_prefix_tl }
+        \token_if_eq_meaning:NNT
+          \g_trace_this_prefix_tl \g_trace_prefix_tl
+          {
+            \tl_gset_eq:NN \g_trace_this_prefix_tl \c_empty_tl
+            \notrace
+          }
+      }
+  }
+%    \end{macrocode}
+%  \end{macro}
+%
+%    \begin{macrocode}
+\tracefloats
+%    \end{macrocode}
+%
+%    \begin{macrocode}
+%</trace>
+%<-trace>\cs_set_eq:NN \trace:n \use_none:n
+%    \end{macrocode}
+%
+%  \begin{macro}{\xor_progress:n}
+%  \begin{macro}{\xor_progress_newline:n}
+%  \begin{macro}{\xor_progress_failed:n}
+%  \begin{macro}{\xor_progress_separator:}
+%
+%    \begin{macrocode}
+%<*progress>
+\cs_new_protected_nopar:Npn \xor_progress:n #1
+  { \tex_message:D {#1} }
+\cs_new_protected_nopar:Npn \xor_progress_newline:n #1
+  { \xor_progress:n { ~ #1 \iow_newline: } }
+\cs_new_protected_nopar:Npn \xor_progress_failed:n  #1
+  { \xor_progress_newline:n { ->~ failed:~ #1 } }
+\cs_new_protected_nopar:Npx \xor_progress_separator:
+  {
+    \xor_progress:n
+      { \prg_replicate:nn { 71 } { = } \iow_newline: }
+  }
+%</progress>
+%    \end{macrocode}
+%  \end{macro}
+%  \end{macro}
+%  \end{macro}
+%  \end{macro}
+
+

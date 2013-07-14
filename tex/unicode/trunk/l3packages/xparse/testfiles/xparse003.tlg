@@ -1,0 +1,213 @@
+This is a generated file for the LaTeX (2e + expl3) validation system.
+Don't change this file in any respect.
+%% \CharacterTable
+%%  {Upper-case    \A\B\C\D\E\F\G\H\I\J\K\L\M\N\O\P\Q\R\S\T\U\V\W\X\Y\Z
+%%   Lower-case    \a\b\c\d\e\f\g\h\i\j\k\l\m\n\o\p\q\r\s\t\u\v\w\x\y\z
+%%   Digits        \0\1\2\3\4\5\6\7\8\9
+%%   Exclamation   \!     Double quote  \"     Hash (number) \#
+%%   Dollar        \$     Percent       \%     Ampersand     \&
+%%   Acute accent  \'     Left paren    \(     Right paren   \)
+%%   Asterisk      \*     Plus          \+     Comma         \,
+%%   Minus         \-     Point         \.     Solidus       \/
+%%   Colon         \:     Semicolon     \;     Less than     \<
+%%   Equals        \=     Greater than  \>     Question mark \?
+%%   Commercial at \@     Left bracket  \[     Backslash     \\
+%%   Right bracket \]     Circumflex    \^     Underscore    \_
+%%   Grave accent  \`     Left brace    \{     Vertical bar  \|
+%%   Right brace   \}     Tilde         \~}
+%%
+Author: Bruno Le Floch
+.................................................
+. LaTeX info: "xparse/define-command"
+. 
+. Defining document command \foo with arg. spec. 'sovm' on line ....
+.................................................
+I got '\foo-\foo-{}
+I got '\foo-% ^^-{k}
+I got '\foo*-#^^-{&&&}
+I got '\foo*-%#^^-{}
+I got '\foo*-%^^-{}
+I got '\foo[ak]-%-{}
+I got '\foo[a]-bcd-{de}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "xparse/verbatim-already-tokenized"
+! 
+! Verbatim command \foo code illegal in command argument.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.45 \use:n {\foo*+&#~+}
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The command \foo code takes a verbatim argument. It may not appear within
+| the argument of another function.
+| 
+| LaTeX will ignore '+&'.
+|...............................................
+I got '\foo*--NoValue--{##}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "xparse/verbatim-already-tokenized"
+! 
+! Verbatim command \foo code illegal in command argument.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.46 \use:n {\foo[\ab]+\ab+}
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The command \foo code takes a verbatim argument. It may not appear within
+| the argument of another function.
+| 
+| LaTeX will ignore '+'.
+|...............................................
+I got '\foo[\ab ]--NoValue--{\ab }
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "xparse/verbatim-already-tokenized"
+! 
+! Verbatim command \foo code illegal in command argument.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.47 \use:n {\foo\abc\ }
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The command \foo code takes a verbatim argument. It may not appear within
+| the argument of another function.
+| 
+| LaTeX will ignore '\abc'.
+|...............................................
+I got '\foo--NoValue--{\ }
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "xparse/verbatim-newline"
+! 
+! Verbatim argument of \foo code ended by end of line.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.49 \foo+a
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The verbatim argument of \foo code cannot contain more than one line, but
+| the end of the current line has been reached. You have probably forgotten
+| the closing delimiter.
+| 
+| LaTeX will ignored '+a'.
+|...............................................
+I got '\foo--NoValue--{+}
+I got '\foo-%}#${-{}
+I got '\foo-%#$|+-{}
+I got '\foo-@#${%{$}#}-{}
+I got '\foo-{{}}-{}
+I got '\foo--{}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "xparse/verbatim-newline"
+! 
+! Verbatim argument of \foo code ended by end of line.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.56 \foo{
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The verbatim argument of \foo code cannot contain more than one line, but
+| the end of the current line has been reached. You have probably forgotten
+| the closing delimiter.
+| 
+| LaTeX will ignored '{'.
+|...............................................
+I got '\foo--NoValue--{}
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "xparse/verbatim-already-tokenized"
+! 
+! Verbatim command \foo code illegal in command argument.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.58 \foo# 
+           {}
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The command \foo code takes a verbatim argument. It may not appear within
+| the argument of another function.
+| 
+| LaTeX will ignore '#'.
+|...............................................
+I got '\foo--NoValue--{}
+I got '\foo-%#&\-{}
+*************************************************
+* LaTeX warning: "xparse/redefine-command"
+* 
+* Redefining document command \foo with arg. spec. 'o+vg+v' on line ....
+*************************************************
+I've got \foo[x]-
+a%bc
+d#+ef
+--
+g h&~i
+-
+I've got \foo-!@#%^&-{\a }-
+%$-
+I've got \foo-%}#${-{}-%#$|+-
+I've got \foo-%#$|+---
+I've got \foo-@#${%{$}#}-{}-${{{{}}}}-
+I've got \foo-{{}}-{}--
+I've got \foo--{}--
+I've got \foo-
+-{ }-
+-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "xparse/verbatim-already-tokenized"
+! 
+! Verbatim command \foo code illegal in command argument.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.94 \foo##
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The command \foo code takes a verbatim argument. It may not appear within
+| the argument of another function.
+| 
+| LaTeX will ignore '#'.
+|...............................................
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!
+! LaTeX error: "xparse/verbatim-already-tokenized"
+! 
+! Verbatim command \foo code illegal in command argument.
+! 
+! See the LaTeX3 documentation for further information.
+! 
+! For immediate help type H <return>.
+!...............................................  
+l.94 \foo##
+|'''''''''''''''''''''''''''''''''''''''''''''''
+| The command \foo code takes a verbatim argument. It may not appear within
+| the argument of another function.
+| 
+| LaTeX will ignore '#'.
+|...............................................
+I've got \foo--NoValue----NoValue--
+*************************************************
+* LaTeX warning: "xparse/redefine-command"
+* 
+* Redefining document command \foo with arg. spec. 'v' on line ....
+*************************************************
+> ab.
+\foo code #1->\showtokens {#1}
+l.97 \halign{#\cr\foo&ab&
+                         \cr}
