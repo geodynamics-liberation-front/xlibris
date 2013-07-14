@@ -1,3 +1,0 @@
-\RequirePackage[check-declarations,log-functions,driver=pdfmode]{expl3}
-
-\input{driver.tex}

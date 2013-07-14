@@ -1,3 +1,0 @@
-\RequirePackage[check-declarations,log-functions,driver=dvipdfmx]{expl3}
-
-\input{driver.tex}

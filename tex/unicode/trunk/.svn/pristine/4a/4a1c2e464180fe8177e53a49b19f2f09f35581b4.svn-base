@@ -1,3 +1,0 @@
-\RequirePackage[check-declarations,log-functions,driver=dvips]{expl3}
-
-\input{driver.tex}
