@@ -1,0 +1,80 @@
+#compdef xlibris
+
+logcomp() {
+	echo "$@" >> ~/complog
+}
+
+_xlibris() { 
+    typeset -A opt_args
+    local curcontext="$curcontext" state line
+	local mountpoint=$(_call_program python python ${HOME}/.xlibrisrc.py mountpoint_dir 2>/dev/null)
+	local tag_dir tags
+
+	_arguments  -s \
+	  "-h[show this help message and exit]" \
+	  "--help[show this help message and exit]" \
+      "-v[provide verbose outupt (debugging)]" \
+	  "--rc=[Initalization file]:rc:_files -g '*.py'" \
+	  ": :->cmd" \
+	  "*: :->opt" \
+      && return 0
+
+	case ${state} in
+		(cmd)
+			_arguments -s \
+			"*:cmd:((\
+					alias\:Alias\ author\ names\
+					bibtex\:Create\ BibTeX\ reference\ file \
+					check\:Check\ the\ XLibris\ environment \
+					import\:import\ PDF \
+					mount\:Mount\ the\ XLibris\ database \
+					setup\:Setup\ the\ XLibris\ environment \
+					tag\:Tag\ a\ document \
+					))"  \
+			&& return 0
+		;;
+		(opt)
+			case ${line[1]} in
+				(import)
+					_arguments -s \
+					"*:file to impor:_files -g '*.pdf'" \
+					&& return 0
+				;;
+				(bibtex)
+					_arguments -s \
+					"*:file to impor:_files -g '*.pdf'" \
+					&& return 0
+				;;
+				(tag)
+					_arguments -s \
+					":opt:_files -g '*.pdf'" \
+					":file to tag:_files -g '*.pdf'" \
+					"*:tag:->tags" \
+					&& return 0
+					tag_dir=${mountpoint}/tag
+					for t in $tag_dir/*; do
+						compadd ${t:$((1 + ${#tag_dir}))}
+					done
+				;;
+				(alias)
+					_arguments -s \
+					":opt:_files -g '*.pdf'" \
+					"*:alias:->alias" \
+					&& return 0
+					author_dir=${mountpoint}/author
+					for a in $author_dir/*; do
+						compadd ${a:$((1 + ${#author_dir}))}
+					done
+				;;
+				(setup)
+					return 0
+				;;
+				(check)
+					return 0
+				;;
+				(mount)
+					return 0
+				;;
+			esac
+    esac
+}
